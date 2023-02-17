@@ -35,7 +35,7 @@
 
 # COMMAND ----------
 
-!pip install pymc3 scipy==1.8.0
+!pip install pymc3==3.11.5 
 
 # COMMAND ----------
 
