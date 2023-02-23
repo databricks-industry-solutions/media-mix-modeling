@@ -26,23 +26,3 @@ spark.sql(f"""USE {dbName}""")
 
 print("using cloud_storage_path {}".format(cloud_storage_path))
 print("using database {arg1} with location at {arg2}{arg3}".format(arg1= dbName,arg2= cloud_storage_path, arg3='tables/'))
-
-# COMMAND ----------
-
-# MAGIC %md ### Data Gen
-
-# COMMAND ----------
-
-from pyspark.sql.functions import date_add, to_date, rand
-from pyspark.sql.types import StructType, StructField, DateType, DoubleType
-
-# COMMAND ----------
-
-# define the schema for the data
-schema = StructType([
-    StructField("date", DateType(), nullable=False),
-    StructField("adwords", DoubleType(), nullable=False),
-    StructField("facebook", DoubleType(), nullable=False),
-    StructField("linkedin", DoubleType(), nullable=False),
-    StructField("sales", DoubleType(), nullable=False)
-])
