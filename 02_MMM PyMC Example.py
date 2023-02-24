@@ -195,7 +195,7 @@ with model:
 # COMMAND ----------
 
 with model:
-    az.plot_trace(trace);
+    az.plot_trace(idata);
 
 # COMMAND ----------
 
