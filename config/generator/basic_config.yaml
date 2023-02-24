@@ -1,0 +1,29 @@
+start_date: 2019-01-01
+end_date: 2022-12-31
+outcome:
+  name: sales
+  min: 0.521e+5
+  max: 2.293e+5
+media:
+  adwords:
+    saturation: true
+    decay: false
+    min: 3928.0
+    max: 49287.0
+    mu: 2.4
+    beta: 0.3
+  facebook:
+    saturation: true
+    decay: false
+    min: 1029.0
+    max: 83927.0
+    mu: 1.6
+    beta: 0.2
+  linkedin:
+    decay: true
+    saturation: true
+    min: 493.0
+    max: 152938.0
+    beta: 0.6
+    mu: 1.2
+    alpha: 0.74
