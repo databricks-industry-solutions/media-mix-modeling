@@ -1,4 +1,8 @@
 # Databricks notebook source
+# MAGIC %run ./config/config $reset_all_data=false
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### Outline for MMM solution accelerator
 # MAGIC * Configure environment
@@ -35,7 +39,7 @@
 
 # COMMAND ----------
 
-!pip install pymc3==3.11.5 
+#!pip install pymc3==3.11.5 
 
 # COMMAND ----------
 
@@ -47,7 +51,8 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 import theano
 import theano.tensor as tt
-# from databricks import koalas as ks
+
+from mediamix.transforms import logistic_function, geometric_adstock_tt
 
 # COMMAND ----------
 
@@ -67,93 +72,13 @@ az.style.use('arviz-darkgrid')
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC need to adjust the input table so the ad spend is a window leading up to the sale rather than aggregated up on the same day a sale occured
+# MAGIC The generated dataset simulates a gold table where the input table has been
+# MAGIC transformed so the ad spend is a window leading up to the sale rather than 
+# MAGIC aggregated up on the same day a sale occured.
 
 # COMMAND ----------
 
-df = spark.sql('''
-select
-  date
-  , 'adwords' as platform
-  , sum(cost) as cost
-from marketing_adwords.ad_stats
-group by 1
-
-union all
-
-select
-  date(day) as date
-  , 'linkedin' as platform
-  , sum(cost_in_usd) as cost
-from marketing_linkedin_ads.ad_analytics_by_campaign
-group by 1
-
-union all
-
-select
-  date(close_date) as date
-  , 'sales' as platform
-  , sum(amount) as cost
-from marketing_sfdc_fivetran.opportunity
-where is_closed = True
-  and is_won = True
-group by 1
-
-union all
-
-select
-  date
-  , 'facebook' as platform
-  , sum(spend) as cost
-from marketing_facebook_ads.basic_campaign
-group by 1
-''')
-
-# COMMAND ----------
-
-df = df.to_koalas().pivot_table(
-  index=['date'],
-  columns='platform',
-  values='cost',
-  aggfunc='sum',
-).fillna(0).reset_index()
-
-# COMMAND ----------
-
-display(df)
-
-# COMMAND ----------
-
-(df
-  .to_spark()
-  .write
-  .format("delta")
-  .mode('overwrite')
-  .save("/home/layla.yang@databricks.com/fivetran")
-)
-
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC CREATE or replace TABLE layla.fivetran
-# MAGIC USING delta
-# MAGIC AS SELECT *
-# MAGIC FROM delta.`/home/layla.yang@databricks.com/fivetran`
-# MAGIC ;
-# MAGIC 
-# MAGIC select * from layla.fivetran limit 10
-
-# COMMAND ----------
-
-df = spark.table('layla.fivetran').toPandas()
-
-# COMMAND ----------
-
-import datetime
-# Filtered for initial analysis
-df = df[df['date'] >= datetime.date(2020,1,1)].sort_values('date')
+df = spark.table(gold_table_name).toPandas()
 
 # COMMAND ----------
 
@@ -163,14 +88,14 @@ cols = channels = ['adwords', 'facebook','linkedin','sales']
 
 scaler = MinMaxScaler()
 for col in cols:
-  df[col] = scaler.fit_transform(df[[col]])
+    df[col] = scaler.fit_transform(df[[col]])
 
 # COMMAND ----------
 
-adwords = df['adwords']
-facebook = df['facebook']
-linkedin = df['linkedin']
-sales = df['sales']
+#adwords = df['adwords']
+#facebook = df['facebook']
+#linkedin = df['linkedin']
+#sales = df['sales']
 
 # COMMAND ----------
 
@@ -187,36 +112,6 @@ outcome = 'sales'
 
 # COMMAND ----------
 
-# Geometric Adstock Function
-def geometric_adstock_tt(x,alpha=0,L=12,normalize=True):
-  '''
-  :param alpha: rate of decay (float)
-  :param L: Length of time carryover effects can have an impact (int)
-  :normalize: Boolean
-  :return transformed spend vector
-  '''
-  
-  w = tt.as_tensor_variable([tt.power(alpha,i) for i in range(L)])
-  xx = tt.stack([tt.concatenate([tt.zeros(i), x[:x.shape[0] - i]]) for i in range(L)])
-  
-  if not normalize:
-    y = tt.dot(w,xx)
-  else:
-    y = tt.dot(w / tt.sum(w), xx)
-  return y
-
-# Nonlinear Saturation Function
-def logistic_function(x_t, mu=0.1):
-  """
-  :param x_t: marketing spend vector (float)
-  :param mu: half-saturation point (float)
-  :return transformed spend vector
-  """
-  
-  return (1 - np.exp(-mu * x_t)) / (1 + np.exp(-mu * x_t))
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ### Initialize model and training: 
 
@@ -225,58 +120,58 @@ def logistic_function(x_t, mu=0.1):
 model = pm.Model()
 
 with model:
-  response_mean = []
-  
-  # channels that can have DECAY and SATURATION effects
-  for channel_name in delay_channels:
-    xx = df[channel_name].values
-  
-    print(f'Adding Delayed Channels: {channel_name}')
-    channel_b = pm.HalfNormal(f'beta_{channel_name}',sd=5)
-  
-    alpha = pm.Beta(f'alpha_{channel_name}',alpha=3, beta=3)
-    channel_mu = pm.Gamma(f'mu_{channel_name}',alpha=3,beta=1)
-    response_mean.append(logistic_function(geometric_adstock_tt(xx, alpha),channel_mu) * channel_b)
-  
-  # channels that can have SATURATION effects only
-  for channel_name in non_lin_channels:
-    xx= df[channel_name].values
-    
-    print(f'Adding Non-linear Logistic Channel: {channel_name}')
-    channel_b = pm.HalfNormal(f'beta_{channel_name}',sd=5)
-    
-    #logistic reach curve
-    channel_mu = pm.Gamma(f'mu_{channel_name}', alpha=3, beta=1)
-    response_mean.append(logistic_function(xx, channel_mu) * channel_b)
-    
-  # Continuous Control Variables
-  if control_vars:
-    for channel_name in control_vars:
-      x = df[channel_name].values
-      
-      print(f'Adding Control: {channel_name}')
-      
-      control_beta = pm.Normal(f'beta_{channel_name}',sd=.25)
-      channel_contrib = control_beta * x
-      response_mean.append(channel_contrib)
-      
-  # Categorical control variables
-  if index_vars:
-    for var_name in index_vars:
-      shape = len(df[var_name].unique())
-      x = df[var_name].values
-      
-      print(f'Adding Index Variable: {var_name}')
-      
-      ind_beta = pm.Normal(f'beta_{var_name}',sd=.5,shape=shape)
-      channel_contrib = ind_beta[x]
-      response_mean.append(channel_contrib)
-    
-  # Noise level
-  sigma = pm.Exponential('sigma',10)
-    
-  # Define likelihood
-  likelihood = pm.Normal(outcome, mu=sum(response_mean), sd=sigma, observed=df[outcome].values)
+    response_mean = []
+
+    # channels that can have DECAY and SATURATION effects
+    for channel_name in delay_channels:
+        xx = df[channel_name].values
+
+        print(f'Adding Delayed Channels: {channel_name}')
+        channel_b = pm.HalfNormal(f'beta_{channel_name}',sd=5)
+
+        alpha = pm.Beta(f'alpha_{channel_name}',alpha=3, beta=3)
+        channel_mu = pm.Gamma(f'mu_{channel_name}',alpha=3,beta=1)
+        response_mean.append(logistic_function(geometric_adstock_tt(xx, alpha),channel_mu) * channel_b)
+
+    # channels that can have SATURATION effects only
+    for channel_name in non_lin_channels:
+        xx= df[channel_name].values
+
+        print(f'Adding Non-linear Logistic Channel: {channel_name}')
+        channel_b = pm.HalfNormal(f'beta_{channel_name}',sd=5)
+
+        #logistic reach curve
+        channel_mu = pm.Gamma(f'mu_{channel_name}', alpha=3, beta=1)
+        response_mean.append(logistic_function(xx, channel_mu) * channel_b)
+
+    # Continuous Control Variables
+    if control_vars:
+        for channel_name in control_vars:
+            x = df[channel_name].values
+            
+            print(f'Adding Control: {channel_name}')
+            
+            control_beta = pm.Normal(f'beta_{channel_name}',sd=.25)
+            channel_contrib = control_beta * x
+            response_mean.append(channel_contrib)
+        
+    # Categorical control variables
+    if index_vars:
+        for var_name in index_vars:
+            shape = len(df[var_name].unique())
+            x = df[var_name].values
+            
+            print(f'Adding Index Variable: {var_name}')
+            
+            ind_beta = pm.Normal(f'beta_{var_name}',sd=.5,shape=shape)
+            channel_contrib = ind_beta[x]
+            response_mean.append(channel_contrib)
+
+    # Noise level
+    sigma = pm.Exponential('sigma',10)
+
+    # Define likelihood
+    likelihood = pm.Normal(outcome, mu=sum(response_mean), sd=sigma, observed=df[outcome].values)
 
 # COMMAND ----------
 
@@ -290,7 +185,7 @@ with model:
 # COMMAND ----------
 
 with model:
-  trace = pm.sample(return_inferencedata=False,target_accept = 0.95)
+    idata = pm.sample(return_inferencedata=True, target_accept=0.95)
 
 # COMMAND ----------
 
@@ -304,17 +199,13 @@ with model:
 
 # COMMAND ----------
 
-az.summary(trace)
+az.summary(idata)
 
 # COMMAND ----------
 
-az.summary(trace)
+with model: 
+    ppc = pm.sample_posterior_predictive(idata, var_names=['sales'])
 
 # COMMAND ----------
 
-from pymc3 import summary
-summary(trace['beta_linkedin'])
-
-# COMMAND ----------
-
-summary(trace)
+az.plot_ppc(az.from_pymc3(posterior_predictive=ppc, model=model))
