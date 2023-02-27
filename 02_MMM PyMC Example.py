@@ -25,21 +25,10 @@
 
 # COMMAND ----------
 
-# MAGIC %md #### Reference
-# MAGIC [From: Introduction to PyMC3](https://github.com/junpenglao/PrecisionWorkshop1_Prep/blob/master/notebooks/1a.%20Introduction%20to%20PyMC3.ipynb)
-# MAGIC * Gelman et al. [3] break down the business of Bayesian analysis into three primary steps:
-# MAGIC * Specify a full probability model, including all parameters, data, transformations, missing values and predictions that are of interest.
-# MAGIC * Calculate the posterior distribution of the unknown quantities in the model, conditional on the data.
-# MAGIC * Perform model checking to evaluate the quality and suitablility of the model.
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ### Configure environment
-
-# COMMAND ----------
-
-#!pip install pymc3==3.11.5 
+# MAGIC 
+# MAGIC Please install pymc3==3.11.5 at the cluster level.
 
 # COMMAND ----------
 
@@ -52,26 +41,21 @@ from sklearn.preprocessing import MinMaxScaler
 import theano
 import theano.tensor as tt
 
-from mediamix.transforms import logistic_function, geometric_adstock_tt
-
-# COMMAND ----------
+from mediamix.transforms import saturation, geometric_adstock
 
 print(f"Running on PyMC3 v{pm.__version__}")
-
-# COMMAND ----------
 
 RANDOM_SEED = 8927
 np.random.seed(RANDOM_SEED)
 az.style.use('arviz-darkgrid')
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Prepare Data
+%config InlineBackend.figure_format = 'retina'
 
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ### Load the data
+# MAGIC 
 # MAGIC The generated dataset simulates a gold table where the input table has been
 # MAGIC transformed so the ad spend is a window leading up to the sale rather than 
 # MAGIC aggregated up on the same day a sale occured.
@@ -79,23 +63,7 @@ az.style.use('arviz-darkgrid')
 # COMMAND ----------
 
 df = spark.table(gold_table_name).toPandas()
-
-# COMMAND ----------
-
-from sklearn.preprocessing import MinMaxScaler
-# scale variables to be between 0 and 1
-cols = channels = ['adwords', 'facebook','linkedin','sales']
-
-scaler = MinMaxScaler()
-for col in cols:
-    df[col] = scaler.fit_transform(df[[col]])
-
-# COMMAND ----------
-
-#adwords = df['adwords']
-#facebook = df['facebook']
-#linkedin = df['linkedin']
-#sales = df['sales']
+display(df)
 
 # COMMAND ----------
 
@@ -104,16 +72,42 @@ for col in cols:
 
 # COMMAND ----------
 
+# define the features to be used in the model
 delay_channels = ['linkedin']
 non_lin_channels = ['adwords','facebook']
-control_vars = False
-index_vars = False
+channels = non_lin_channels + delay_channels
+control_vars = None
+index_vars = None
 outcome = 'sales'
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Initialize model and training: 
+# MAGIC ### Scale the data
+
+# COMMAND ----------
+
+# scale variables to be between 0 and 1
+scalers = {}
+for c in channels:
+    scalers[c] = MinMaxScaler()
+    df[c] = scalers[c].fit_transform(df[[c]])
+
+# custom scaling on outcome
+custom_outcome_scale = 100000
+df[outcome] /= custom_outcome_scale
+
+# COMMAND ----------
+
+# visualize the scaled results
+for c in channels + [outcome]:
+    plt.plot(df[c], label=f'{c}', linewidth=0.25)
+plt.legend();
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Initialize model and training
 
 # COMMAND ----------
 
@@ -122,27 +116,30 @@ model = pm.Model()
 with model:
     response_mean = []
 
+    intercept = pm.Normal('intercept', mu=0, sd=10)
+    response_mean.append(intercept)
+
     # channels that can have DECAY and SATURATION effects
     for channel_name in delay_channels:
         xx = df[channel_name].values
 
         print(f'Adding Delayed Channels: {channel_name}')
-        channel_b = pm.HalfNormal(f'beta_{channel_name}',sd=5)
+        channel_b = pm.HalfNormal(f'beta_{channel_name}', sd=1)
 
-        alpha = pm.Beta(f'alpha_{channel_name}',alpha=3, beta=3)
-        channel_mu = pm.Gamma(f'mu_{channel_name}',alpha=3,beta=1)
-        response_mean.append(logistic_function(geometric_adstock_tt(xx, alpha),channel_mu) * channel_b)
+        alpha = pm.Beta(f'alpha_{channel_name}', alpha=1, beta=3)
+        channel_mu = pm.Gamma(f'mu_{channel_name}', alpha=3, beta=1)
+        response_mean.append(saturation(geometric_adstock(xx, alpha),channel_mu) * channel_b)
 
     # channels that can have SATURATION effects only
     for channel_name in non_lin_channels:
         xx= df[channel_name].values
 
         print(f'Adding Non-linear Logistic Channel: {channel_name}')
-        channel_b = pm.HalfNormal(f'beta_{channel_name}',sd=5)
+        channel_b = pm.HalfNormal(f'beta_{channel_name}', sd=1)
 
         #logistic reach curve
         channel_mu = pm.Gamma(f'mu_{channel_name}', alpha=3, beta=1)
-        response_mean.append(logistic_function(xx, channel_mu) * channel_b)
+        response_mean.append(saturation(xx, channel_mu) * channel_b)
 
     # Continuous Control Variables
     if control_vars:
@@ -151,7 +148,7 @@ with model:
             
             print(f'Adding Control: {channel_name}')
             
-            control_beta = pm.Normal(f'beta_{channel_name}',sd=.25)
+            control_beta = pm.Normal(f'beta_{channel_name}', sd=1)
             channel_contrib = control_beta * x
             response_mean.append(channel_contrib)
         
@@ -168,7 +165,7 @@ with model:
             response_mean.append(channel_contrib)
 
     # Noise level
-    sigma = pm.Exponential('sigma',10)
+    sigma = pm.HalfCauchy('sigma', 5)
 
     # Define likelihood
     likelihood = pm.Normal(outcome, mu=sum(response_mean), sd=sigma, observed=df[outcome].values)
@@ -179,13 +176,8 @@ with model:
 
 # COMMAND ----------
 
-# MAGIC %md 
-# MAGIC ### Generate posterior predictive samples from a model given a trace:
-
-# COMMAND ----------
-
 with model:
-    idata = pm.sample(return_inferencedata=True, target_accept=0.95)
+    idata = pm.sample(return_inferencedata=True)
 
 # COMMAND ----------
 
@@ -194,12 +186,22 @@ with model:
 
 # COMMAND ----------
 
+az.summary(idata)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Inspect the trace visually
+
+# COMMAND ----------
+
 with model:
     az.plot_trace(idata);
 
 # COMMAND ----------
 
-az.summary(idata)
+# MAGIC %md 
+# MAGIC ### Inspect posterior predictive samples
 
 # COMMAND ----------
 
@@ -208,4 +210,14 @@ with model:
 
 # COMMAND ----------
 
-az.plot_ppc(az.from_pymc3(posterior_predictive=ppc, model=model))
+az.plot_ppc(az.from_pymc3(posterior_predictive=ppc, model=model));
+
+# COMMAND ----------
+
+# MAGIC %md 
+# MAGIC ### Reference
+# MAGIC [From: Introduction to PyMC3](https://github.com/junpenglao/PrecisionWorkshop1_Prep/blob/master/notebooks/1a.%20Introduction%20to%20PyMC3.ipynb)
+# MAGIC * Gelman et al. [3] break down the business of Bayesian analysis into three primary steps:
+# MAGIC * Specify a full probability model, including all parameters, data, transformations, missing values and predictions that are of interest.
+# MAGIC * Calculate the posterior distribution of the unknown quantities in the model, conditional on the data.
+# MAGIC * Perform model checking to evaluate the quality and suitablility of the model.

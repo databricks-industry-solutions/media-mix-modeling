@@ -3,16 +3,126 @@ import pandas as pd
 from scipy.fft import ifft
 from datetime import datetime, timedelta
 import yaml
-from mediamix.transforms import logistic_function, geometric_adstock_tt
+from mediamix import transforms as mmt
+import pyspark.sql
+from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, StructField, DateType, DoubleType
 
 
-def load_generator_config(config_path):
-    with open(config_path, "r") as config_file:
-        config = yaml.safe_load(config_file)
-        config['channels'] = list(config['media'].keys())
-        config['n'] = (config['end_date'] - config['start_date']).days
-        return config
+class Channel:
 
+    def __init__(self, name, **kwargs):
+        self.name = name
+        self.saturation = kwargs['saturation']
+
+        if self.saturation:
+            self.mu = kwargs['mu']
+
+        self.decay = kwargs['decay']
+        if self.decay:
+            self.alpha = kwargs['alpha']
+        
+        self.beta = kwargs['beta']
+        self.sigma = kwargs['signal']['sigma']
+        self.min = kwargs['min']
+        self.max = kwargs['max']
+    
+    def sample(self, n):
+        """Generate a basic signal to represent spend on this channel."""
+        x = np.abs(np.cumsum(np.random.normal(0, self.sigma, size=n)))
+        return rescale(x, self.min, self.max)
+
+    def impact(self, x):
+        """Compute the impact of adspend on a channel on the outcome using our basic model."""
+    
+        # the model parameters are interpreted assuming a scaled input, so rescale
+        x = rescale(x, 0, 1)
+    
+        # if it's the decay model, then apply the decate
+        if self.decay:
+            x = mmt.geometric_adstock(x, self.alpha).eval()
+    
+        # if it includes a saturation component, apply it as logistic with mu
+        if self.saturation: 
+            x = mmt.saturation(x, self.mu).eval()
+    
+        # apply beta
+        return self.beta * x
+        
+
+class Generator:
+
+    def __init__(self, 
+        start_date: datetime, 
+        end_date: datetime,
+        outcome_name: str,
+        intercept: float,
+        sigma: float,
+        scale: float
+    ):
+        self.start_date = start_date
+        self.end_date = end_date
+        self.n = (self.end_date - self.start_date).days + 1
+        self.outcome_name = outcome_name
+        self.intercept = intercept
+        self.sigma = sigma
+        self.scale = scale
+        self.channels = {}
+    
+    def sample(self) -> pd.DataFrame:
+        pass
+
+    @classmethod
+    def from_config_file(cls, filename: str) -> 'Generator':
+        # load the config file
+        with open(filename, "r") as config_file:
+            config = yaml.safe_load(config_file)
+
+        # create the base generator
+        generator = Generator(
+            config['start_date'],
+            config['end_date'],
+            config['outcome']['name'],
+            config['outcome']['intercept'],
+            config['outcome']['sigma'],
+            config['outcome']['scale'])
+
+        # add each of the media channels
+        for name in config['media'].keys():
+            channel = Channel(name, **config['media'][name])
+            generator.add_channel(channel)
+        
+        return generator
+    
+    def add_channel(self, channel: Channel):
+        self.channels[channel.name] = channel
+
+    def _create_empty_dataframe(self):
+        n_channels = len(self.channels)
+        cols = list(self.channels.keys()) + [self.outcome_name]
+        idx = pd.date_range(start=self.start_date, end=self.end_date)
+        df = pd.DataFrame(np.zeros((self.n, n_channels + 1)), columns=cols, index=idx)
+        return df
+
+    def sample(self):
+        """Generate an adspend dataset based on the given config.
+        """
+        df = self._create_empty_dataframe()
+
+        # generate the baseline signal at the intercept with some white noise
+        outcome = np.random.normal(self.intercept, self.sigma, self.n)
+        
+        # add the impact for each channel
+        for channel in self.channels.values():
+            adspend = channel.sample(self.n)
+            df[channel.name] = np.round(adspend, 2)
+            outcome += channel.impact(adspend)
+
+        # scale the final outcome outcome by scale factor
+        df[self.outcome_name] = np.round(outcome * self.scale, 2)
+
+        return df
+        
 
 def rescale(x, a, b):
     """Rescale x to be between a and b."""
@@ -21,86 +131,21 @@ def rescale(x, a, b):
     return x * (b - a) + a
 
 
-def generate_base_adspend_signal(n, nfreqs=5, min_freq=2, max_freq=40, min_amp=10, max_amp=200):
-    """
-    Generate a base time series for use as an adspend signal.
-    
-    Incorporates some distinct frequencies to (hopefully)
-
-        1. Mimic periodicity in true adspend with low effort.
-        2. Make it easier for the sampler to converge.
-
-    """
-    # initialize the frequency domain with some (positive) noise
-    y = np.abs(np.random.normal(size=n))
-
-    # generate random amplitudes and random frequencies
-    for i in range(nfreqs):
-        freq = np.random.randint(min_freq, max_freq)
-        y[freq] += np.random.randint(min_amp, max_amp)
-
-    # convert to time domain and drop imaginary component
-    y = ifft(y).real
-
-    # first element always too high - zero it out
-    y[0] = 0
-
-    # return the scaled time domain signal
-    return rescale(y, 0, 1)
-
-
-def get_end_of_prior_month(d: datetime) -> datetime:
-    """Get the end of the month before the given date."""
-    d = datetime(d.year, d.month, 1)
-    return d - timedelta(days=1)
-
-
-def apply_decay(x, alpha):
-    # capture the index since the adstock function loses it
-    idx = x.index
-
-    # apply the adstock function from the model
-    x = geometric_adstock_tt(x, alpha).eval()
-
-    # restore the index
-    x = pd.Series(x, index=idx)
-
-    return x
-
-
-def create_empty_dataframe(n, channels):
-    n_channels = len(channels)
-    cols = channels + ['sales']
-    today = datetime.now().date()
-    end_date = get_end_of_prior_month(today)
-    start_date = end_date - timedelta(days=n - 1)
-    idx = pd.date_range(start=start_date, end=end_date)
-    df = pd.DataFrame(np.zeros((n, n_channels + 1)), columns=cols, index=idx)
-    return df
-    
-
-def channel_impact(x, beta=None, alpha=None, mu=None, model=None, decay=False, saturation=False, **kwargs):
-    """Compute the impact of adspend on a channel on the outcome using our basic model."""
-    # copy the series so we aren't updating the one in the dataframe
-    x = x.copy()
-
-    # the model parameters are interpreted assuming a scaled input, so rescale
-    x = rescale(x, 0, 1)
-
-    # if it's the decay model, then apply the decate
-    if decay:
-        x = apply_decay(x, alpha)
-
-    # if it includes a saturation component, apply it as logistic with mu
-    if saturation: 
-        x = logistic_function(x, mu)
-
-    # apply beta
-    return beta * x
-
-    
 def impulse_pattern(n, hits):
+    """Generate a simple impulse pattern."""
     x = np.zeros(n)
     for a, y in hits:
         x[a] = y
     return x
+
+
+def convert_to_spark_dataframe(df: pd.DataFrame, schema: StructType) -> pyspark.sql.DataFrame:
+    """Convert the generator pandas DataFrame to the expected Spark DataFrame.
+    """
+    spark = pyspark.sql.SparkSession.builder.getOrCreate()
+    return (
+        spark.createDataFrame(
+            df.reset_index(drop=False)
+            .rename({'index': 'date'}), 
+            schema=schema))
+    

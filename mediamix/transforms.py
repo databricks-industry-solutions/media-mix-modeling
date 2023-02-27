@@ -8,7 +8,7 @@ warnings.filterwarnings('ignore', 'iteritems is deprecated')
 warnings.filterwarnings('ignore', '`np.complex` is a deprecated')
 
 
-def geometric_adstock_tt(x,alpha=0,L=12,normalize=True):
+def geometric_adstock(x, alpha=0, L=12, normalize=True):
     '''
     Geometric Adstock Function
 
@@ -28,13 +28,7 @@ def geometric_adstock_tt(x,alpha=0,L=12,normalize=True):
     return y
 
 
-def logistic_function(x_t, mu=0.1):
-    """
-    Nonlinear Saturation Function
+def saturation(x_t, mu=0.1):
+    """Theano implementation of nonlinear saturation function."""
+    return (1 - tt.exp(-mu * x_t)) / (1 + tt.exp(-mu * x_t))
 
-    :param x_t: marketing spend vector (float)
-    :param mu: half-saturation point (float)
-    :return transformed spend vector
-    """
-
-    return (1 - np.exp(-mu * x_t)) / (1 + np.exp(-mu * x_t))
