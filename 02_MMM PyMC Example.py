@@ -1,4 +1,10 @@
 # Databricks notebook source
+# MAGIC %pip install --no-deps typing-extensions==3.7.4 deprecat==2.1.1 semver==2.13.0 cftime==1.6.2 \
+# MAGIC     fastprogress==0.2.0 netCDF4==1.6.2 xarray-einstats==0.3 xarray==0.21.0 theano-pymc==1.1.2 \
+# MAGIC     arviz==0.11.0 pymc3==3.11.5
+
+# COMMAND ----------
+
 # MAGIC %run ./config/config $reset_all_data=false
 
 # COMMAND ----------
@@ -27,8 +33,6 @@
 
 # MAGIC %md
 # MAGIC ### Configure environment
-# MAGIC 
-# MAGIC Please install pymc3==3.11.5 at the cluster level.
 
 # COMMAND ----------
 
