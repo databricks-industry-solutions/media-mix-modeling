@@ -1,7 +1,5 @@
 # Databricks notebook source
-# MAGIC %pip install --no-deps typing-extensions==3.7.4 deprecat==2.1.1 semver==2.13.0 cftime==1.6.2 \
-# MAGIC     fastprogress==0.2.0 netCDF4==1.6.2 xarray-einstats==0.3 xarray==0.21.0 theano-pymc==1.1.2 \
-# MAGIC     arviz==0.11.0 pymc3==3.11.5
+# MAGIC %md This accelerator notebook is available at https://github.com/databricks-industry-solutions/media-mix-modeling. Please use the `mmm_cluster` cluster created by RUNME notebook at the root directory of this accelerator folder, if you run this notebook interactively.
 
 # COMMAND ----------
 
