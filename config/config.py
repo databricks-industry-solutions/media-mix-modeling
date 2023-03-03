@@ -26,3 +26,19 @@ spark.sql(f"""USE {dbName}""")
 
 print("using cloud_storage_path {}".format(cloud_storage_path))
 print("using database {arg1} with location at {arg2}{arg3}".format(arg1= dbName,arg2= cloud_storage_path, arg3='tables/'))
+
+# COMMAND ----------
+
+def fix_fastprogress():
+    """Run this to get progress bars in pymc3 before importing it on DBR 11.3+."""
+    import fastprogress as fp
+    from fastprogress.fastprogress import force_console_behavior
+    fp.master_bar, fp.progress_bar = force_console_behavior()
+    fp.fastprogress.master_bar, fp.fastprogress.progress_bar = force_console_behavior()
+
+fix_fastprogress()
+
+# COMMAND ----------
+
+gold_table_name = "fivetran"
+print(f"generated gold_table_name: {gold_table_name}")

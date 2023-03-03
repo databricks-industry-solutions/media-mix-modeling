@@ -1,0 +1,39 @@
+start_date: 2019-01-01
+end_date: 2022-12-31
+outcome:
+  name: sales
+  intercept: 3.4
+  sigma: 0.01
+  scale: 100000
+media:
+  adwords:
+    signal:
+      base: walk
+      sigma: 1
+    saturation: true
+    decay: false
+    min: 3928.0
+    max: 49287.0
+    mu: 3.1
+    beta: 1.5
+  facebook:
+    signal:
+      base: walk
+      sigma: 1
+    saturation: true
+    decay: false
+    min: 1029.0
+    max: 83927.0
+    mu: 4.2
+    beta: 1.0
+  linkedin:
+    signal:
+      base: walk
+      sigma: 1
+    decay: true
+    saturation: true
+    min: 493.0
+    max: 152938.0
+    beta: 2.4
+    mu: 2.1
+    alpha: 0.6

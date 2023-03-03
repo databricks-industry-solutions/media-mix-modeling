@@ -1,5 +1,9 @@
 # Databricks notebook source
-# MAGIC %run ./config/config $reset_all_data=true
+# MAGIC %md This accelerator notebook is available at https://github.com/databricks-industry-solutions/media-mix-modeling. Please use the `mmm_cluster` cluster created by RUNME notebook at the root directory of this accelerator folder, if you run this notebook interactively.
+
+# COMMAND ----------
+
+# MAGIC %run ./config/config $reset_all_data=false
 
 # COMMAND ----------
 
@@ -7,8 +11,17 @@
 
 # COMMAND ----------
 
-from pyspark.sql.functions import date_add, to_date, rand
+import numpy as np
 from pyspark.sql.types import StructType, StructField, DateType, DoubleType
+from mediamix import generator as mmg
+
+from warnings import filterwarnings
+filterwarnings('ignore', 'iteritems is deprecated')
+
+%config InlineBackend.figure_format = 'retina'
+
+RANDOM_SEED = 8927
+np.random.seed(RANDOM_SEED)
 
 # COMMAND ----------
 
@@ -18,9 +31,20 @@ schema = StructType([
     StructField("adwords", DoubleType(), nullable=False),
     StructField("facebook", DoubleType(), nullable=False),
     StructField("linkedin", DoubleType(), nullable=False),
-    StructField("sales", DoubleType(), nullable=False)
-])
+    StructField("sales", DoubleType(), nullable=False)])
 
 # COMMAND ----------
 
-# MAGIC %md TBC
+config_path = 'config/generator/basic_config.yaml'
+generator = mmg.Generator.from_config_file(config_path)
+df = generator.sample()
+df.plot(linewidth=0.25);
+
+# COMMAND ----------
+
+sdf = mmg.convert_to_spark_dataframe(df, schema)
+display(sdf)
+
+# COMMAND ----------
+
+sdf.write.mode('overwrite').saveAsTable(gold_table_name)
