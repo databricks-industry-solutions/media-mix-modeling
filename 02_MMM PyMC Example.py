@@ -42,8 +42,11 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 import theano
 import theano.tensor as tt
+import mlflow
+import pickle
+from pprint import pprint
 
-from mediamix.transforms import saturation, geometric_adstock
+import mediamix.model as mmm
 
 print(f"Running on PyMC3 v{pm.__version__}")
 
@@ -52,6 +55,11 @@ np.random.seed(RANDOM_SEED)
 az.style.use('arviz-darkgrid')
 
 %config InlineBackend.figure_format = 'retina'
+
+# COMMAND ----------
+
+from importlib import reload
+reload(mmm)
 
 # COMMAND ----------
 
@@ -74,13 +82,9 @@ display(df)
 
 # COMMAND ----------
 
-# define the features to be used in the model
-delay_channels = ['linkedin']
-non_lin_channels = ['adwords','facebook']
-channels = non_lin_channels + delay_channels
-control_vars = None
-index_vars = None
-outcome = 'sales'
+config_path = 'config/model/basic_config.yaml'
+config = mmm.ModelConfig.from_config_file(config_path)
+pprint(config.to_config_dict())
 
 # COMMAND ----------
 
@@ -89,21 +93,23 @@ outcome = 'sales'
 
 # COMMAND ----------
 
+# get the names of the channels and output from the config
+channels = config.channel_names
+outcome = config.outcome_name
+
 # scale variables to be between 0 and 1
 scalers = {}
+scaled_df = df.copy()
 for c in channels:
     scalers[c] = MinMaxScaler()
-    df[c] = scalers[c].fit_transform(df[[c]])
+    scaled_df[c] = scalers[c].fit_transform(df[[c]])
 
 # custom scaling on outcome
-custom_outcome_scale = 100000
-df[outcome] /= custom_outcome_scale
-
-# COMMAND ----------
+scaled_df[outcome] /= config.outcome_scale
 
 # visualize the scaled results
 for c in channels + [outcome]:
-    plt.plot(df[c], label=f'{c}', linewidth=0.25)
+    plt.plot(scaled_df[c], label=f'{c}', linewidth=0.25)
 plt.legend();
 
 # COMMAND ----------
@@ -113,73 +119,30 @@ plt.legend();
 
 # COMMAND ----------
 
-model = pm.Model()
-
-with model:
-    response_mean = []
-
-    intercept = pm.Normal('intercept', mu=0, sd=10)
-    response_mean.append(intercept)
-
-    # channels that can have DECAY and SATURATION effects
-    for channel_name in delay_channels:
-        xx = df[channel_name].values
-
-        print(f'Adding Delayed Channels: {channel_name}')
-        channel_b = pm.HalfNormal(f'beta_{channel_name}', sd=1)
-
-        alpha = pm.Beta(f'alpha_{channel_name}', alpha=1, beta=3)
-        channel_mu = pm.Gamma(f'mu_{channel_name}', alpha=3, beta=1)
-        response_mean.append(saturation(geometric_adstock(xx, alpha),channel_mu) * channel_b)
-
-    # channels that can have SATURATION effects only
-    for channel_name in non_lin_channels:
-        xx= df[channel_name].values
-
-        print(f'Adding Non-linear Logistic Channel: {channel_name}')
-        channel_b = pm.HalfNormal(f'beta_{channel_name}', sd=1)
-
-        #logistic reach curve
-        channel_mu = pm.Gamma(f'mu_{channel_name}', alpha=3, beta=1)
-        response_mean.append(saturation(xx, channel_mu) * channel_b)
-
-    # Continuous Control Variables
-    if control_vars:
-        for channel_name in control_vars:
-            x = df[channel_name].values
-            
-            print(f'Adding Control: {channel_name}')
-            
-            control_beta = pm.Normal(f'beta_{channel_name}', sd=1)
-            channel_contrib = control_beta * x
-            response_mean.append(channel_contrib)
-        
-    # Categorical control variables
-    if index_vars:
-        for var_name in index_vars:
-            shape = len(df[var_name].unique())
-            x = df[var_name].values
-            
-            print(f'Adding Index Variable: {var_name}')
-            
-            ind_beta = pm.Normal(f'beta_{var_name}',sd=.5,shape=shape)
-            channel_contrib = ind_beta[x]
-            response_mean.append(channel_contrib)
-
-    # Noise level
-    sigma = pm.HalfCauchy('sigma', 5)
-
-    # Define likelihood
-    likelihood = pm.Normal(outcome, mu=sum(response_mean), sd=sigma, observed=df[outcome].values)
+# MAGIC %md ### Run Inference with MLflow logging
 
 # COMMAND ----------
 
-# MAGIC %md ### TO DO - ADD MLflow 
+def test_log_plot():
+    with mlflow.start_run():
+        x = np.linspace(-2 * np.pi, 2 * np.pi, 200)
+        y = np.sin(x)
+        fig = plt.figure()
+        plt.plot(x, y)
+        plt.savefig('blah.png')
+        mlflow.log_artifact('blah.png')
+        plt.close(fig)
+
+test_log_plot()
 
 # COMMAND ----------
 
-with model:
-    idata = pm.sample(return_inferencedata=True)
+params = {
+    'draws': 1000,
+    'tune': 1000,
+    'init': 'auto'}
+
+model, idata = config.run_inference(params, scaled_df)
 
 # COMMAND ----------
 
@@ -197,8 +160,7 @@ az.summary(idata)
 
 # COMMAND ----------
 
-with model:
-    az.plot_trace(idata);
+az.plot_trace(idata);
 
 # COMMAND ----------
 
@@ -207,12 +169,7 @@ with model:
 
 # COMMAND ----------
 
-with model: 
-    ppc = pm.sample_posterior_predictive(idata, var_names=['sales'])
-
-# COMMAND ----------
-
-az.plot_ppc(az.from_pymc3(posterior_predictive=ppc, model=model));
+az.plot_ppc(idata);
 
 # COMMAND ----------
 

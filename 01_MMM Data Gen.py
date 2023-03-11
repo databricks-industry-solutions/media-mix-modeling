@@ -7,7 +7,7 @@
 
 # COMMAND ----------
 
-# MAGIC %md ### Data Gen
+# MAGIC %md ### Step 1: Set up the environment
 
 # COMMAND ----------
 
