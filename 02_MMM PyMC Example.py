@@ -8,7 +8,8 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Outline for MMM solution accelerator
+# MAGIC **Outline for MMM solution accelerator**
+# MAGIC 
 # MAGIC * Configure environment
 # MAGIC * Prepare data
 # MAGIC * Build model
