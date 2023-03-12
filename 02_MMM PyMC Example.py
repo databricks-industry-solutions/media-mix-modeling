@@ -29,8 +29,7 @@
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ### Configure environment
+# MAGIC %md ### Step 1: Set up the environment
 
 # COMMAND ----------
 
@@ -39,7 +38,6 @@ import arviz as az
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import MinMaxScaler
 import theano
 import theano.tensor as tt
 import mlflow
@@ -64,7 +62,7 @@ reload(mmm)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Load the data
+# MAGIC ### Step 2: Load the data
 # MAGIC 
 # MAGIC The generated dataset simulates a gold table where the input table has been
 # MAGIC transformed so the ad spend is a window leading up to the sale rather than 
@@ -78,7 +76,7 @@ display(df)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Configure model
+# MAGIC ### Step 3: Configure the model
 
 # COMMAND ----------
 
@@ -88,52 +86,7 @@ pprint(config.to_config_dict())
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ### Scale the data
-
-# COMMAND ----------
-
-# get the names of the channels and output from the config
-channels = config.channel_names
-outcome = config.outcome_name
-
-# scale variables to be between 0 and 1
-scalers = {}
-scaled_df = df.copy()
-for c in channels:
-    scalers[c] = MinMaxScaler()
-    scaled_df[c] = scalers[c].fit_transform(df[[c]])
-
-# custom scaling on outcome
-scaled_df[outcome] /= config.outcome_scale
-
-# visualize the scaled results
-for c in channels + [outcome]:
-    plt.plot(scaled_df[c], label=f'{c}', linewidth=0.25)
-plt.legend();
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Initialize model and training
-
-# COMMAND ----------
-
-# MAGIC %md ### Run Inference with MLflow logging
-
-# COMMAND ----------
-
-def test_log_plot():
-    with mlflow.start_run():
-        x = np.linspace(-2 * np.pi, 2 * np.pi, 200)
-        y = np.sin(x)
-        fig = plt.figure()
-        plt.plot(x, y)
-        plt.savefig('blah.png')
-        mlflow.log_artifact('blah.png')
-        plt.close(fig)
-
-test_log_plot()
+# MAGIC %md ### Step 4: Run inference
 
 # COMMAND ----------
 
@@ -142,12 +95,12 @@ params = {
     'tune': 1000,
     'init': 'auto'}
 
-model, idata = config.run_inference(params, scaled_df)
+model, idata, scalers = config.run_inference(params, df)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Posterior Analysis
+# MAGIC ### Step 5: Analyze the results
 
 # COMMAND ----------
 
@@ -156,7 +109,7 @@ az.summary(idata)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Inspect the trace visually
+# MAGIC ### Step 6: Inspect the trace visually
 
 # COMMAND ----------
 
@@ -165,7 +118,7 @@ az.plot_trace(idata);
 # COMMAND ----------
 
 # MAGIC %md 
-# MAGIC ### Inspect posterior predictive samples
+# MAGIC ### Step 7: Inspect posterior predictive samples
 
 # COMMAND ----------
 
@@ -174,7 +127,7 @@ az.plot_ppc(idata);
 # COMMAND ----------
 
 # MAGIC %md 
-# MAGIC ### Reference
+# MAGIC ### References
 # MAGIC [From: Introduction to PyMC3](https://github.com/junpenglao/PrecisionWorkshop1_Prep/blob/master/notebooks/1a.%20Introduction%20to%20PyMC3.ipynb)
 # MAGIC * Gelman et al. [3] break down the business of Bayesian analysis into three primary steps:
 # MAGIC * Specify a full probability model, including all parameters, data, transformations, missing values and predictions that are of interest.

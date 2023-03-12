@@ -25,6 +25,10 @@ np.random.seed(RANDOM_SEED)
 
 # COMMAND ----------
 
+# MAGIC %md ### Step 2: Define the schema
+
+# COMMAND ----------
+
 # define the schema for the data
 schema = StructType([
     StructField("date", DateType(), nullable=False),
@@ -35,6 +39,10 @@ schema = StructType([
 
 # COMMAND ----------
 
+# MAGIC %md ### Step 3: Generate the dataset
+
+# COMMAND ----------
+
 config_path = 'config/generator/basic_config.yaml'
 generator = mmg.Generator.from_config_file(config_path)
 df = generator.sample()
@@ -42,9 +50,10 @@ df.plot(linewidth=0.25);
 
 # COMMAND ----------
 
-sdf = mmg.convert_to_spark_dataframe(df, schema)
-display(sdf)
+# MAGIC %md ### Step 4: Write the simulated gold table
 
 # COMMAND ----------
 
+sdf = mmg.convert_to_spark_dataframe(df, schema)
 sdf.write.mode('overwrite').saveAsTable(gold_table_name)
+display(sdf)

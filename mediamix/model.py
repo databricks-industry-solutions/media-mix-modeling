@@ -3,6 +3,7 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
 
 import pymc3 as pm
 import arviz as az
@@ -12,7 +13,16 @@ import mlflow
 
 from mediamix.transforms import saturation, geometric_adstock
 
+from contextlib import contextmanager
+import os
 
+@contextmanager
+def log_figure(filename):
+    yield None
+    plt.savefig(filename, dpi=300, transparent=False, facecolor='white')
+    plt.close()
+    mlflow.log_artifact(filename)
+    os.unlink(filename)
 
 class Channel:
 
@@ -145,18 +155,16 @@ class ModelConfig:
             # Categorical control variables
             for var_name in self.index_vars:
                 shape = len(df[var_name].unique())
-                x = df[var_name].values
+                obs = df[var_name].values
                 
                 print(f'Adding Index Variable: {var_name}')
                 
-                ind_beta = pm.Normal(f'beta_{var_name}',sd=.5,shape=shape)
-                channel_contrib = ind_beta[x]
+                ind_beta = pm.Normal(f'beta_{var_name}', sd=.5, shape=shape)
+                channel_contrib = ind_beta[obs]
                 response_mean.append(channel_contrib)
     
             # Noise level
-            sigma = pm.HalfCauchy(
-                'sigma', 
-                beta=self.sigma_beta)
+            sigma = pm.HalfCauchy('sigma', beta=self.sigma_beta)
     
             # Define likelihood
             likelihood = pm.Normal(
@@ -204,12 +212,23 @@ class ModelConfig:
         }
         return config
 
+    def scale_data(self, df):
+        # scale variables to be between 0 and 1
+        scalers = {}
+        df = df.copy()
+        for c in self.channel_names:
+            scalers[c] = MinMaxScaler()
+            df[c] = scalers[c].fit_transform(df[[c]])
+
+        # custom scaling on outcome
+        df[self.outcome_name] /= self.outcome_scale
+        return scalers, df
+
     def run_inference(self, params, df):
         with mlflow.start_run():
+            scalers, df = self.scale_data(df)
             model = self.create_model(df)
             with model:
-                outcome = self.outcome_name
-                
                 mlflow.log_dict(self.to_config_dict(), 'config.yaml')
 
                 mlflow.log_params(params)
@@ -222,22 +241,19 @@ class ModelConfig:
 
                 self.log_results(df, idata)
 
-                return model, idata
+                return model, idata, scalers
 
 
     def log_results(self, df, idata):
-        az.plot_trace(idata)
-        plt.savefig('trace.png')
-        plt.close()
-        mlflow.log_artifact('trace.png')
+        with log_figure('trace.png'):
+            az.plot_trace(idata)
 
         waic = az.waic(idata)
         for m in ['waic', 'waic_se', 'p_waic']:
             mlflow.log_metric(m, waic[m])
 
         ppc = pm.sample_posterior_predictive(idata, var_names=[self.outcome_name])
-        idata_ppc = az.from_pymc3(posterior_predictive=ppc)
-        idata.extend(idata_ppc)
+        idata.extend(az.from_pymc3(posterior_predictive=ppc))
 
         r2_score = az.r2_score(df[self.outcome_name].values, ppc[self.outcome_name])
         for m in ['r2', 'r2_std']:
@@ -247,10 +263,8 @@ class ModelConfig:
         summary_df.to_html('summary.html')
         mlflow.log_artifact('summary.html')
 
-        az.plot_ppc(idata_ppc);
-        plt.savefig('ppc.png')
-        plt.close()
-        mlflow.log_artifact('ppc.png')
+        with log_figure('ppc.png'):
+            az.plot_ppc(idata)
 
         idata.to_netcdf('idata.nc')
         mlflow.log_artifact('idata.nc')
