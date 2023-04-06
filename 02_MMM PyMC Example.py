@@ -71,6 +71,8 @@ reload(mmm)
 
 # COMMAND ----------
 
+## create temp view of dataset and write to deltalake as delta table mmm_layla_yang.mmm_dateset
+## Then create same mmm_dateset table with two downstream tables with log transform / interaction terms to demostrate Lineage under the catalog.schema "field_demos.uc_lineage"
 sdf = spark.table(gold_table_name)
 sdf.createOrReplaceTempView("mmm_dataset")
 
@@ -85,21 +87,16 @@ spark.sql(f"""USE {dbName}""")
 
 # COMMAND ----------
 
-dbutils.fs.rm(delta_location, True)
+# dbutils.fs.rm(delta_location, True)
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE mmm_layla_yang.mmm_dateset
+# MAGIC CREATE TABLE IF NOT EXISTS mmm_layla_yang.mmm_dateset
 # MAGIC USING DELTA
 # MAGIC LOCATION '/Users/layla.yang@databricks.com/field_demos/media/mmm/delta/'
 # MAGIC AS SELECT *
 # MAGIC FROM mmm_dataset
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC select current_catalog()
 
 # COMMAND ----------
 
