@@ -8,7 +8,8 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Outline for MMM solution accelerator
+# MAGIC **Outline for MMM solution accelerator**
+# MAGIC 
 # MAGIC * Configure environment
 # MAGIC * Prepare data
 # MAGIC * Build model
@@ -29,8 +30,7 @@
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ### Configure environment
+# MAGIC %md ### Step 1: Set up the environment
 
 # COMMAND ----------
 
@@ -39,11 +39,13 @@ import arviz as az
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import MinMaxScaler
 import theano
 import theano.tensor as tt
+import mlflow
+import pickle
+from pprint import pprint
 
-from mediamix.transforms import saturation, geometric_adstock
+import mediamix.model as mmm
 
 print(f"Running on PyMC3 v{pm.__version__}")
 
@@ -55,8 +57,13 @@ az.style.use('arviz-darkgrid')
 
 # COMMAND ----------
 
+from importlib import reload
+reload(mmm)
+
+# COMMAND ----------
+
 # MAGIC %md
-# MAGIC ### Load the data
+# MAGIC ### Step 2: Load the data
 # MAGIC 
 # MAGIC The generated dataset simulates a gold table where the input table has been
 # MAGIC transformed so the ad spend is a window leading up to the sale rather than 
@@ -70,121 +77,31 @@ display(df)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Configure model
+# MAGIC ### Step 3: Configure the model
 
 # COMMAND ----------
 
-# define the features to be used in the model
-delay_channels = ['linkedin']
-non_lin_channels = ['adwords','facebook']
-channels = non_lin_channels + delay_channels
-control_vars = None
-index_vars = None
-outcome = 'sales'
+config_path = 'config/model/basic_config.yaml'
+config = mmm.ModelConfig.from_config_file(config_path)
+pprint(config.to_config_dict())
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ### Scale the data
+# MAGIC %md ### Step 4: Run inference
 
 # COMMAND ----------
 
-# scale variables to be between 0 and 1
-scalers = {}
-for c in channels:
-    scalers[c] = MinMaxScaler()
-    df[c] = scalers[c].fit_transform(df[[c]])
+params = {
+    'draws': 1000,
+    'tune': 1000,
+    'init': 'auto'}
 
-# custom scaling on outcome
-custom_outcome_scale = 100000
-df[outcome] /= custom_outcome_scale
-
-# COMMAND ----------
-
-# visualize the scaled results
-for c in channels + [outcome]:
-    plt.plot(df[c], label=f'{c}', linewidth=0.25)
-plt.legend();
+model, idata, scalers = config.run_inference(params, df)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Initialize model and training
-
-# COMMAND ----------
-
-model = pm.Model()
-
-with model:
-    response_mean = []
-
-    intercept = pm.Normal('intercept', mu=0, sd=10)
-    response_mean.append(intercept)
-
-    # channels that can have DECAY and SATURATION effects
-    for channel_name in delay_channels:
-        xx = df[channel_name].values
-
-        print(f'Adding Delayed Channels: {channel_name}')
-        channel_b = pm.HalfNormal(f'beta_{channel_name}', sd=1)
-
-        alpha = pm.Beta(f'alpha_{channel_name}', alpha=1, beta=3)
-        channel_mu = pm.Gamma(f'mu_{channel_name}', alpha=3, beta=1)
-        response_mean.append(saturation(geometric_adstock(xx, alpha),channel_mu) * channel_b)
-
-    # channels that can have SATURATION effects only
-    for channel_name in non_lin_channels:
-        xx= df[channel_name].values
-
-        print(f'Adding Non-linear Logistic Channel: {channel_name}')
-        channel_b = pm.HalfNormal(f'beta_{channel_name}', sd=1)
-
-        #logistic reach curve
-        channel_mu = pm.Gamma(f'mu_{channel_name}', alpha=3, beta=1)
-        response_mean.append(saturation(xx, channel_mu) * channel_b)
-
-    # Continuous Control Variables
-    if control_vars:
-        for channel_name in control_vars:
-            x = df[channel_name].values
-            
-            print(f'Adding Control: {channel_name}')
-            
-            control_beta = pm.Normal(f'beta_{channel_name}', sd=1)
-            channel_contrib = control_beta * x
-            response_mean.append(channel_contrib)
-        
-    # Categorical control variables
-    if index_vars:
-        for var_name in index_vars:
-            shape = len(df[var_name].unique())
-            x = df[var_name].values
-            
-            print(f'Adding Index Variable: {var_name}')
-            
-            ind_beta = pm.Normal(f'beta_{var_name}',sd=.5,shape=shape)
-            channel_contrib = ind_beta[x]
-            response_mean.append(channel_contrib)
-
-    # Noise level
-    sigma = pm.HalfCauchy('sigma', 5)
-
-    # Define likelihood
-    likelihood = pm.Normal(outcome, mu=sum(response_mean), sd=sigma, observed=df[outcome].values)
-
-# COMMAND ----------
-
-# MAGIC %md ### TO DO - ADD MLflow 
-
-# COMMAND ----------
-
-with model:
-    idata = pm.sample(return_inferencedata=True)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Posterior Analysis
+# MAGIC ### Step 5: Analyze the results
 
 # COMMAND ----------
 
@@ -193,31 +110,25 @@ az.summary(idata)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Inspect the trace visually
+# MAGIC ### Step 6: Inspect the trace visually
 
 # COMMAND ----------
 
-with model:
-    az.plot_trace(idata);
-
-# COMMAND ----------
-
-# MAGIC %md 
-# MAGIC ### Inspect posterior predictive samples
-
-# COMMAND ----------
-
-with model: 
-    ppc = pm.sample_posterior_predictive(idata, var_names=['sales'])
-
-# COMMAND ----------
-
-az.plot_ppc(az.from_pymc3(posterior_predictive=ppc, model=model));
+az.plot_trace(idata);
 
 # COMMAND ----------
 
 # MAGIC %md 
-# MAGIC ### Reference
+# MAGIC ### Step 7: Inspect posterior predictive samples
+
+# COMMAND ----------
+
+az.plot_ppc(idata);
+
+# COMMAND ----------
+
+# MAGIC %md 
+# MAGIC ### References
 # MAGIC [From: Introduction to PyMC3](https://github.com/junpenglao/PrecisionWorkshop1_Prep/blob/master/notebooks/1a.%20Introduction%20to%20PyMC3.ipynb)
 # MAGIC * Gelman et al. [3] break down the business of Bayesian analysis into three primary steps:
 # MAGIC * Specify a full probability model, including all parameters, data, transformations, missing values and predictions that are of interest.
