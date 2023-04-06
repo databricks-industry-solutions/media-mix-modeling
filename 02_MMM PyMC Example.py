@@ -71,6 +71,38 @@ reload(mmm)
 
 # COMMAND ----------
 
+sdf = spark.table(gold_table_name)
+sdf.createOrReplaceTempView("mmm_dataset")
+
+# COMMAND ----------
+
+dbName = 'mmm_layla_yang'
+cloud_storage_path = '/Users/layla.yang@databricks.com/field_demos/media/mmm/'
+delta_location = '/Users/layla.yang@databricks.com/field_demos/media/mmm/delta/'
+
+spark.sql(f"""create database if not exists {dbName} LOCATION '{cloud_storage_path}/tables' """)
+spark.sql(f"""USE {dbName}""")
+
+# COMMAND ----------
+
+dbutils.fs.rm(delta_location, True)
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CREATE TABLE mmm_layla_yang.mmm_dateset
+# MAGIC USING DELTA
+# MAGIC LOCATION '/Users/layla.yang@databricks.com/field_demos/media/mmm/delta/'
+# MAGIC AS SELECT *
+# MAGIC FROM mmm_dataset
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select current_catalog()
+
+# COMMAND ----------
+
 df = spark.table(gold_table_name).toPandas()
 display(df)
 
