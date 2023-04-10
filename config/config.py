@@ -42,3 +42,12 @@ fix_fastprogress()
 
 gold_table_name = "fivetran"
 print(f"generated gold_table_name: {gold_table_name}")
+
+# COMMAND ----------
+
+import mlflow
+mlflow.set_experiment('/Users/{}/media_mix'.format(current_user))
+
+# COMMAND ----------
+
+
