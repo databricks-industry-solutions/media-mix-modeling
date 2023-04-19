@@ -57,11 +57,6 @@ az.style.use('arviz-darkgrid')
 
 # COMMAND ----------
 
-from importlib import reload
-reload(mmm)
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ### Step 2: Load the data
 # MAGIC 
@@ -81,7 +76,7 @@ display(df)
 
 # COMMAND ----------
 
-config_path = 'config/model/basic_config.yaml'
+config_path = os.path.join(CONFIG_DIR, 'model/basic_config.yaml')
 config = mmm.ModelConfig.from_config_file(config_path)
 pprint(config.to_config_dict())
 

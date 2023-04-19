@@ -49,22 +49,17 @@ job_json = {
                 "libraries": [
                   {
                       "pypi": {
-                          "package": "graphviz==0.20.1"
-                      }
-                  },
-                  {
-                      "pypi": {
-                          "package": "python-marketing-research==0.9.4"
-                      }
-                  },
-                  {
-                      "pypi": {
                           "package": "pymc3==3.11.5"
                       }
                   },
                   {
                       "pypi": {
                           "package": "pytest==7.2.1"
+                      }
+                  },
+                  {
+                      "pypi": {
+                          "package": "pandas==1.3.4"
                       }
                   }
               ],
@@ -83,22 +78,17 @@ job_json = {
                 "libraries": [
                   {
                       "pypi": {
-                          "package": "graphviz==0.20.1"
-                      }
-                  },
-                  {
-                      "pypi": {
-                          "package": "python-marketing-research==0.9.4"
-                      }
-                  },
-                  {
-                      "pypi": {
                           "package": "pymc3==3.11.5"
                       }
                   },
                   {
                       "pypi": {
                           "package": "pytest==7.2.1"
+                      }
+                  },
+                  {
+                      "pypi": {
+                          "package": "pandas==1.3.4"
                       }
                   }
               ],
@@ -129,7 +119,3 @@ job_json = {
 dbutils.widgets.dropdown("run_job", "False", ["True", "False"])
 run_job = dbutils.widgets.get("run_job") == "True"
 NotebookSolutionCompanion().deploy_compute(job_json, run_job=run_job)
-
-# COMMAND ----------
-
-
