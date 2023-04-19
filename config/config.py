@@ -8,6 +8,9 @@ spark.conf.set("spark.databricks.io.cache.enabled", "true")
 # COMMAND ----------
 
 import re
+import os
+import mlflow
+
 db_prefix = "cme"
 current_user = dbutils.notebook.entry_point.getDbutils().notebook().getContext().tags().apply('user')
 current_user_no_at = current_user[:current_user.rfind('@')]
@@ -26,6 +29,19 @@ spark.sql(f"""USE {dbName}""")
 
 print("using cloud_storage_path {}".format(cloud_storage_path))
 print("using database {arg1} with location at {arg2}{arg3}".format(arg1= dbName,arg2= cloud_storage_path, arg3='tables/'))
+
+CODE_DIR = os.getcwd()
+CONFIG_DIR = os.path.join(CODE_DIR, 'config')
+LOCAL_WORKING_DIR = f'/tmp/{current_user}/mmm'
+EXPERIMENT_PATH = f'/Users/{current_user}/Media Mix Modeling'
+os.makedirs(LOCAL_WORKING_DIR, exist_ok=True)
+os.chdir(LOCAL_WORKING_DIR)
+mlflow.set_experiment(EXPERIMENT_PATH)
+
+print(f"using code directory {CODE_DIR}")
+print(f"using config directory {CONFIG_DIR}")
+print(f"using local directory {LOCAL_WORKING_DIR}")
+print(f"using experiment path {EXPERIMENT_PATH}")
 
 # COMMAND ----------
 

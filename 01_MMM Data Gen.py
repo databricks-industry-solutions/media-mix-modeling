@@ -43,7 +43,7 @@ schema = StructType([
 
 # COMMAND ----------
 
-config_path = 'config/generator/basic_config.yaml'
+config_path = os.path.join(CONFIG_DIR, 'generator/basic_config.yaml')
 generator = mmg.Generator.from_config_file(config_path)
 df = generator.sample()
 df.plot(linewidth=0.25);
