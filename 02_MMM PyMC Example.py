@@ -3,7 +3,7 @@
 
 # COMMAND ----------
 
-In this notebook, we showcase how to build a media mix model using the classes we wrote based on pymc3.
+# MAGIC %md In this notebook, we showcase how to build a media mix model using the classes we wrote based on pymc3.
 
 # COMMAND ----------
 
