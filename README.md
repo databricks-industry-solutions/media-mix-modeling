@@ -1,17 +1,24 @@
-![image](https://user-images.githubusercontent.com/86326159/206014015-a70e3581-e15c-4a10-95ef-36fd5a560717.png)
+![image](https://github.com/databricks-industry-solutions/.github/raw/main/profile/solacc_logo_wide.png)
 
 [![CLOUD](https://img.shields.io/badge/CLOUD-ALL-blue?logo=googlecloud&style=for-the-badge)](https://cloud.google.com/databricks)
 [![POC](https://img.shields.io/badge/POC-10_days-green?style=for-the-badge)](https://databricks.com/try-databricks)
 
-*Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.*
+
+## Media Mix Modeling Accelerator
+
+MMM (Marketing or Media Mix Modeling), is a data-driven methodology that enables companies to identify and measure the impact of their marketing campaigns across multiple channels.  MMM helps businesses make better-informed decisions about their advertising and marketing strategies. 
+
+By analyzing data from various channels such as TV, social media, email marketing, and more, MMM can determine which channels are contributing the most to strategic KPIs, such as sales. By including external events and indicators, decision makers can better understand the impact of outside factors (such as holidays, economic conditions, or weather) and avoid accidently over-valuing the impact of ad spend alone.
+
+Databricks Lakehouse offers a unified platform for building modernized MMM solutions that are scalable and flexible. Marketers can unifies various upstream data sources, automates data ingestion, processing, and transformation, and provides full transparency and traceability of data usage. With powerful DSML capabilities and collaborative workstream, marketers can seamlessly leverage the full potential of their data, driving more informed and effective marketing investment decisions. 
+
 
 ___
-<john.doe@databricks.com>
+<corey.abshire@databricks.com>,  <tristan.nixon@databricks.com>,  <layla@databricks.com>
 
 ___
 
-
-IMAGE TO REFERENCE ARCHITECTURE
+<arch image>
 
 ___
 
@@ -19,7 +26,8 @@ ___
 
 | library                                | description             | license    | source                                              |
 |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
-| PyYAML                                 | Reading Yaml files      | MIT        | https://github.com/yaml/pyyaml                      |
+| pytest                                 | Python testing framework      | MIT        | https://github.com/pytest-dev/pytest                      |
+| pymc3 | Probabilistic Programming in Python | Apache 2.0 | https://github.com/pymc-devs/pymc |
 
 ## Getting started
 
