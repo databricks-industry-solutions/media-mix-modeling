@@ -3,6 +3,10 @@
 
 # COMMAND ----------
 
+In this notebook, we showcase how to build a media mix model using the classes we wrote based on pymc3.
+
+# COMMAND ----------
+
 # MAGIC %run ./config/config $reset_all_data=false
 
 # COMMAND ----------
@@ -31,6 +35,12 @@
 # COMMAND ----------
 
 # MAGIC %md ### Step 1: Set up the environment
+
+# COMMAND ----------
+
+# MAGIC %md TODO: Make mediamix.model installable from `%pip install <github-repo>`. This allows users to run the downloaded DBC notebooks in addition to the cloned repo notebooks. 
+# MAGIC 
+# MAGIC For an example, see https://github.com/databricks-industry-solutions/pixels
 
 # COMMAND ----------
 

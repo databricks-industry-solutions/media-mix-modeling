@@ -3,6 +3,20 @@
 
 # COMMAND ----------
 
+## Media Mix Modeling Accelerator
+
+MMM (Marketing or Media Mix Modeling), is a data-driven methodology that enables companies to identify and measure the impact of their marketing campaigns across multiple channels.  MMM helps businesses make better-informed decisions about their advertising and marketing strategies. 
+
+By analyzing data from various channels such as TV, social media, email marketing, and more, MMM can determine which channels are contributing the most to strategic KPIs, such as sales. By including external events and indicators, decision makers can better understand the impact of outside factors (such as holidays, economic conditions, or weather) and avoid accidently over-valuing the impact of ad spend alone.
+
+Databricks Lakehouse offers a unified platform for building modernized MMM solutions that are scalable and flexible. Marketers can unifies various upstream data sources, automates data ingestion, processing, and transformation, and provides full transparency and traceability of data usage. With powerful DSML capabilities and collaborative workstream, marketers can seamlessly leverage the full potential of their data, driving more informed and effective marketing investment decisions. 
+
+In this notebook, we set up the environment to generate some synthetic data we will use in the second notebook, where we showcase how to build a media mix model using the classes we wrote based on pymc3.
+
+<insert architecture diagram>
+
+# COMMAND ----------
+
 # MAGIC %run ./config/config $reset_all_data=false
 
 # COMMAND ----------
