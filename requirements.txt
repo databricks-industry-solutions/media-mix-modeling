@@ -1,0 +1,11 @@
+pymc3==3.11.5
+arviz==0.11.0
+fastprogress==0.2.0 
+semver==2.13.0 
+theano-pymc==1.1.2 
+deprecat==2.1.1 
+xarray==0.21.1
+netCDF4==1.6.3 
+cftime==1.6.2
+pandas==1.3.4
+scipy==1.7.3
