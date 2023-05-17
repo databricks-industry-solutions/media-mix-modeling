@@ -81,10 +81,6 @@ df.plot(linewidth=0.25);
 
 # COMMAND ----------
 
-# MAGIC %pip install pandas==1.3.4
-
-# COMMAND ----------
-
 sdf = mmg.convert_to_spark_dataframe(df, schema)
 sdf.write.mode('overwrite').saveAsTable(gold_table_name)
 display(sdf)
