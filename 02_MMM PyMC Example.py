@@ -121,6 +121,36 @@ pprint(config.to_config_dict())
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC #### Understanding the configuration parameters
+# MAGIC
+# MAGIC If you're new to Bayesian modeling, media mix modeling, or both, many of these concepts may seem overwhelming. Here are a few resources we found useful that you may want to have a look at:
+# MAGIC
+# MAGIC - [Bayesian Media Mix Modeling for Marketing Optimization](https://www.pymc-labs.io/blog-posts/bayesian-media-mix-modeling-for-marketing-optimization/): This is a blog post by Benjamin Vincent over at [PyMC Labs](https://www.pymc-labs.io/) based on some work they did with [HelloFresh](https://www.hellofresh.com/careers/). It does a great job of walking through some of the details of media mix modeling and understanding it from a Bayesian perspective.
+# MAGIC - [A Bayesian Approach to Media Mix Modeling](https://www.youtube.com/watch?v=UznM_-_760Y): A conference presentation at [PyMCCon 2020](https://discourse.pymc.io/c/pymcon/12) from Michael Johns & Zhenyu Wang from HelloFresh that walks through many of the same concepts and how they were used there.
+# MAGIC - [Bayesian Methods for Media Mix Modeling with Carryover and Shape Effects](https://research.google/pubs/pub46001/): An often cited paper that proposed this type of media mix model with flexible forms to model delay (adstock) and shape (saturation) effects.
+# MAGIC
+# MAGIC It can also be helpful to take advantage of ipywidgets to gain a more intuitive feel for the various shape and delay functions.
+
+# COMMAND ----------
+
+from mediamix import interactive as mmi
+from importlib import reload
+reload(mmi)
+
+mmi.display_geometric_adstock_and_delay_interactive()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC If you experiment with the above plots, you'll find that increasing the geometric adstock \\(mu\\) parameter "spreads" the impact of the input to the function over multiple time units. From a media mix perspective, if $1 of media spend happens at \\(t=5\\) as shown, then the relative impact for that $1 can either be felt immediately \\(mu=0\\), or it can be spread over the subsequent \\(L\\) time units (the default for \\(L\\) is 12 in this case).
+# MAGIC
+# MAGIC For saturation, you'll find that increasing the \\(mu\\) parameter yields a saturation effect where an additional $1 of media spend does not yield a linear increase of the impact as the impact itself grows larger. For a very low saturation value, it may be close to linear, but as \\(mu\\) increases then $1 gets you less and less of an effect as the overall amount spent continues to grow.
+# MAGIC
+# MAGIC In a Bayesian model, we specify that we believe whether each channel would exhibit these effects, and if so, the valid range of our prior beliefs, via our priors and likelihood functions. Diving deeper into the details of Bayesian modeling is beyond the scope of this accelerator and is well served by the resources we mentioned earlier, along with many other books. But hopefully this brief explanation gives you a little more insight into what's going on under the hood here.
+
+# COMMAND ----------
+
 # MAGIC %md ### Step 4: Run inference
 # MAGIC
 # MAGIC Now that we've defined our model structure, we can run inference to analyze the posterior distributions of the parameters of interest! Here, we can also specify various settings of the inference process itself, such as the number of draws to collect (per core / chain) and the number of warmup (i.e., tune) draws to take before we start collecting them.
@@ -175,6 +205,21 @@ model, idata, scalers = config.run_inference(params, df)
 # COMMAND ----------
 
 az.summary(idata)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC We can also compare how seeing this particular dataset has caused us to update our prior beliefs. Let's take our simulated LinkedIn as an example. Here, we used the rather uninformative priors of a Beta distribution with parameters \\(\alpha=1\\) and \\(\beta=3\\) for our geometric adstock \\(\alpha\\) parameter and a Gamma distribution with parameters \\(\alpha=3\\) and \\(\beta=1\\) for our saturation \\(\mu\\) parameter. We also have priors for the \\(\beta\\) parameter and others, but let's focus on these two for the sake of simplicity. If we plot these two prior distributions and compare them to the histogram for our traces for these two parameters from our inference run, we can see how much our beliefs have shifted based on the data we've seen.
+# MAGIC
+# MAGIC As you can see in the plots, because we simulated a relatively large amount of synthetic data for this example, our beliefs have been updated rather dramatically!
+
+# COMMAND ----------
+
+with model:
+    prior = pm.sample_prior_predictive()
+    idata.extend(az.from_pymc3(prior=prior))
+    
+az.plot_dist_comparison(idata, var_names=["saturation_linkedin", "geometric_adstock_linkedin"], figsize=(12, 8));
 
 # COMMAND ----------
 
