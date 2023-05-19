@@ -1,4 +1,8 @@
 # Databricks notebook source
+# MAGIC %pip install --no-deps -q -r requirements.txt
+
+# COMMAND ----------
+
 dbutils.widgets.dropdown("reset_all_data", "false", ["true", "false"], "Reset all data")
 
 # COMMAND ----------
