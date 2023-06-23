@@ -1,5 +1,7 @@
 # Databricks notebook source
-# MAGIC %md This accelerator notebook is available at https://github.com/databricks-industry-solutions/media-mix-modeling. Please use the `mmm_cluster` cluster created by RUNME notebook at the root directory of this accelerator folder if you run this notebook interactively.
+# MAGIC %md This accelerator notebook is available at https://github.com/databricks-industry-solutions/media-mix-modeling. 
+# MAGIC
+# MAGIC To import this accelerator, please clone this repo into your workspace instead of using the `Download .dbc` option. Please run the `RUNME` notebook at the root directory of this accelerator folder to create a cluster and a Workflow. Use the `mmm_cluster` cluster created by the RUNME notebook to run this notebook interactively.
 
 # COMMAND ----------
 
