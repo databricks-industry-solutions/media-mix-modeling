@@ -6,6 +6,8 @@
 
 ## Media Mix Modeling Accelerator
 
+**Under construction: We're just finishing up some changes to convert his solution accelerator to use PyMC-Marketing. Thanks for your interest and please be sure to check back again in a few days for when the changes are completed!**
+
 MMM (Marketing or Media Mix Modeling), is a data-driven methodology that enables companies to identify and measure the impact of their marketing campaigns across multiple channels.  MMM helps businesses make better-informed decisions about their advertising and marketing strategies. 
 
 By analyzing data from various channels such as TV, social media, email marketing, and more, MMM can determine which channels are contributing the most to strategic KPIs, such as sales. By including external events and indicators, decision makers can better understand the impact of outside factors (such as holidays, economic conditions, or weather) and avoid accidently over-valuing the impact of ad spend alone.
