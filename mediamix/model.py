@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 
-import pymc3 as pm
+import pymc as pm
 import arviz as az
 
 import yaml
@@ -81,7 +81,7 @@ class Channel:
     
         channel_b = pm.HalfNormal(
             f'beta_{self.channel_name}', 
-            sd=self.beta_sd_prior)
+            sigma=self.beta_sd_prior)
         
         return out * channel_b
 
@@ -135,7 +135,7 @@ class ModelConfig:
             intercept = pm.Normal(
                 'intercept', 
                 mu=self.intercept_mu, 
-                sd=self.intercept_sd)
+                sigma=self.intercept_sd)
             response_mean.append(intercept)
     
             for c in self.channels:
@@ -148,7 +148,7 @@ class ModelConfig:
                 
                 print(f'Adding Control: {channel_name}')
                 
-                control_beta = pm.Normal(f'beta_{channel_name}', sd=1)
+                control_beta = pm.Normal(f'beta_{channel_name}', sigma=1)
                 channel_contrib = control_beta * x
                 response_mean.append(channel_contrib)
                 
@@ -159,7 +159,7 @@ class ModelConfig:
                 
                 print(f'Adding Index Variable: {var_name}')
                 
-                ind_beta = pm.Normal(f'beta_{var_name}', sd=.5, shape=shape)
+                ind_beta = pm.Normal(f'beta_{var_name}', sigma=.5, shape=shape)
                 channel_contrib = ind_beta[obs]
                 response_mean.append(channel_contrib)
     
@@ -170,7 +170,7 @@ class ModelConfig:
             likelihood = pm.Normal(
                 self.outcome_name, 
                 mu=sum(response_mean), 
-                sd=sigma, 
+                sigma=sigma, 
                 observed=df[self.outcome_name].values)
     
         return model
@@ -237,9 +237,10 @@ class ModelConfig:
                     draws=params['draws'],
                     tune=params['tune'],
                     init=params['init'],
+                    idata_kwargs={'log_likelihood': True},
                     return_inferencedata=True)
 
-                self.log_results(df, idata)
+                #self.log_results(df, idata)
 
                 return model, idata, scalers
 
