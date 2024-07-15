@@ -1,7 +1,7 @@
 import numpy as np
-import pymc3 as pm
-import theano
-import theano.tensor as tt
+import pymc as pm
+import pytensor
+import pytensor.tensor as tt
 import warnings
 
 warnings.filterwarnings('ignore', 'iteritems is deprecated')

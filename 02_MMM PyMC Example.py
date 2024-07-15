@@ -66,20 +66,20 @@
 
 # COMMAND ----------
 
-import pymc3 as pm
+import pymc as pm
 import arviz as az
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-import theano
-import theano.tensor as tt
+import pytensor
+import pytensor.tensor as tt
 import mlflow
 import pickle
 from pprint import pprint
 
 import mediamix.model as mmm
 
-print(f"Running on PyMC3 v{pm.__version__}")
+print(f"Running on PyMC v{pm.__version__}")
 
 RANDOM_SEED = 8927
 np.random.seed(RANDOM_SEED)
@@ -218,8 +218,7 @@ az.summary(idata)
 # COMMAND ----------
 
 with model:
-    prior = pm.sample_prior_predictive()
-    idata.extend(az.from_pymc3(prior=prior))
+    idata.extend(pm.sample_prior_predictive())
     
 az.plot_dist_comparison(idata, var_names=["saturation_linkedin", "geometric_adstock_linkedin"], figsize=(12, 8));
 
@@ -253,6 +252,8 @@ az.plot_trace(idata);
 
 # COMMAND ----------
 
+with model:
+    idata.extend(pm.sample_posterior_predictive(idata.posterior))
 az.plot_ppc(idata);
 
 # COMMAND ----------

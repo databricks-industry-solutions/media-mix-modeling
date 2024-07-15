@@ -32,6 +32,12 @@ from solacc.companion import NotebookSolutionCompanion
 
 # COMMAND ----------
 
+libraries = [
+    { "pypi": { "package": "graphviz==0.20.3" } },
+    { "pypi": { "package": "pymc==5.16.2" } },
+    { "pypi": { "package": "pytest==8.2.2" } }
+]
+
 job_json = {
         "timeout_seconds": 28800,
         "max_concurrent_runs": 1,
@@ -46,13 +52,7 @@ job_json = {
                     "notebook_path": f"01_MMM Data Gen"
                 },
                 "task_key": "mmm_01",
-                "libraries": [
-                  {
-                      "pypi": {
-                          "package": "pytest==7.2.1"
-                      }
-                  }
-              ],
+                "libraries": libraries,
             },
             {
                 "job_cluster_key": "mmm_cluster",
@@ -65,20 +65,14 @@ job_json = {
                         "task_key": "mmm_01"
                     }
                 ],
-                "libraries": [
-                  {
-                      "pypi": {
-                          "package": "pytest==7.2.1"
-                      }
-                  }
-              ],
+                "libraries": libraries,
             }
         ],
         "job_clusters": [
             {
                 "job_cluster_key": "mmm_cluster",
                 "new_cluster": {
-                    "spark_version": "11.3.x-cpu-ml-scala2.12",
+                    "spark_version": "14.3.x-cpu-ml-scala2.12",
                 "spark_conf": {
                     "spark.databricks.delta.formatCheck.enabled": "false"
                     },
