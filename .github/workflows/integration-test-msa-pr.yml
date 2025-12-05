@@ -5,7 +5,9 @@ on:
 
 jobs:
   deploy-and-test-bundle:
-    runs-on: ubuntu-latest
+    runs-on:
+      group: ubuntu-runners
+      labels: ubuntu-20.04-16core
     env:
       DATABRICKS_HOST: ${{ vars.MSA_DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.MSA_DATABRICKS_CLIENT_ID }}

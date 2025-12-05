@@ -5,7 +5,9 @@ on:
 
 jobs:
   deploy-and-test-bundle:
-    runs-on: ubuntu-latest
+    runs-on:
+      group: ubuntu-runners
+      labels: ubuntu-20.04-16core
     env:
       DATABRICKS_HOST: ${{ vars.AWS_DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.AWS_DATABRICKS_CLIENT_ID }}
