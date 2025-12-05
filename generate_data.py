@@ -1,18 +1,18 @@
 # Databricks notebook source
-# MAGIC %md This accelerator notebook is available at https://github.com/databricks-industry-solutions/media-mix-modeling. 
+# MAGIC %md This accelerator notebook is available at https://github.com/databricks-industry-solutions/media-mix-modeling.
 # MAGIC
 # MAGIC To import this accelerator, please [clone the repo above into your workspace](https://docs.databricks.com/repos/git-operations-with-repos.html) instead of using the `Download .dbc` option. Please run the `RUNME` notebook at the root directory of this accelerator folder to create a cluster and a Workflow. Use the `mmm_cluster` cluster created by the RUNME notebook to run this notebook interactively.
 
 # COMMAND ----------
 
-# MAGIC %md 
+# MAGIC %md
 # MAGIC ## Media Mix Modeling Accelerator
 # MAGIC
-# MAGIC MMM (Marketing or Media Mix Modeling), is a data-driven methodology that enables companies to identify and measure the impact of their marketing campaigns across multiple channels.  MMM helps businesses make better-informed decisions about their advertising and marketing strategies. 
+# MAGIC MMM (Marketing or Media Mix Modeling), is a data-driven methodology that enables companies to identify and measure the impact of their marketing campaigns across multiple channels.  MMM helps businesses make better-informed decisions about their advertising and marketing strategies.
 # MAGIC
 # MAGIC By analyzing data from various channels such as TV, social media, email marketing, and more, MMM can determine which channels are contributing the most to strategic KPIs, such as sales. By including external events and indicators, decision makers can better understand the impact of outside factors (such as holidays, economic conditions, or weather) and avoid accidently over-valuing the impact of ad spend alone.
 # MAGIC
-# MAGIC Databricks Lakehouse offers a unified platform for building modernized MMM solutions that are scalable and flexible. Marketers can unify various upstream data sources, automates data ingestion, processing, and transformation, and provides full transparency and traceability of data usage. With powerful data science and machine learning capabilities and collaborative workstreams, marketers can seamlessly leverage the full potential of their data, driving more informed and effective marketing investment decisions. 
+# MAGIC Databricks Lakehouse offers a unified platform for building modernized MMM solutions that are scalable and flexible. Marketers can unify various upstream data sources, automates data ingestion, processing, and transformation, and provides full transparency and traceability of data usage. With powerful data science and machine learning capabilities and collaborative workstreams, marketers can seamlessly leverage the full potential of their data, driving more informed and effective marketing investment decisions.
 # MAGIC
 # MAGIC In this notebook, we set up the environment to generate some synthetic data we will use in the second notebook, where we showcase how to build a media mix model using the classes we wrote based on [pymc](https://www.pymc.io/welcome.html).
 # MAGIC
@@ -20,7 +20,25 @@
 
 # COMMAND ----------
 
-# MAGIC %run ./config/config $reset_all_data=false
+# Set up parameters
+dbutils.widgets.text("catalog_name", "main", "Catalog Name")
+dbutils.widgets.text("schema_name", "default", "Schema Name")
+dbutils.widgets.text("gold_table_name", "mmm_data", "Gold Table Name")
+
+catalog_name = dbutils.widgets.get("catalog_name")
+schema_name = dbutils.widgets.get("schema_name")
+gold_table_name = dbutils.widgets.get("gold_table_name")
+
+print(f"Using catalog: {catalog_name}")
+print(f"Using schema: {schema_name}")
+print(f"Using gold table: {gold_table_name}")
+
+# COMMAND ----------
+
+# Set catalog and schema context
+spark.sql(f"USE CATALOG {catalog_name}")
+spark.sql(f"USE SCHEMA {schema_name}")
+print(f"Using catalog.schema: {catalog_name}.{schema_name}")
 
 # COMMAND ----------
 
@@ -70,7 +88,7 @@ schema = StructType([
 
 # COMMAND ----------
 
-config_path = os.path.join(CONFIG_DIR, 'generator/basic_config.yaml')
+config_path = './config/generator/basic_config.yaml'
 generator = mmg.Generator.from_config_file(config_path)
 df = generator.sample()
 df.plot(linewidth=0.25);

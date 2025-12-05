@@ -18,6 +18,14 @@ variables:
     description: Schema name
     default: <your-schema>
 
+  gold_table_name:
+    description: Name of the gold table for MMM data
+    default: mmm_data
+
+  experiment_name:
+    description: MLflow experiment path (full path including /Users/<username>/)
+    default: /Shared/media-mix-modeling
+
   service_principal_name:
     description: Service principal for production deployments (stg/prd)
     default: <your-service-principal>
@@ -35,6 +43,7 @@ targets:
       host: https://e2-demo-field-eng.cloud.databricks.com/
     variables:
       cluster_name: media-mix-modeling-dev-cluster
+      experiment_name: /Users/${workspace.current_user.userName}/media-mix-modeling
     run_as:
       user_name: ${workspace.current_user.userName}
 
@@ -47,6 +56,7 @@ targets:
       cluster_name: media-mix-modeling-stg-cluster
       catalog_name: stg
       schema_name: media_mix_modeling
+      experiment_name: /Shared/media-mix-modeling-stg
     run_as:
       service_principal_name: ${var.service_principal_name}
 
@@ -59,5 +69,6 @@ targets:
       cluster_name: media-mix-modeling-prd-cluster
       catalog_name: prd
       schema_name: media_mix_modeling
+      experiment_name: /Shared/media-mix-modeling-prd
     run_as:
       service_principal_name: ${var.service_principal_name}
