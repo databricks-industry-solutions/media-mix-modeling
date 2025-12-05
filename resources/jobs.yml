@@ -29,7 +29,7 @@ resources:
         - environment_key: serverless
           spec:
             dependencies:
-              - requirements.txt
+              - -r ../requirements.txt
 
       schedule:
         quartz_cron_expression: "0 0 2 * * ?"
