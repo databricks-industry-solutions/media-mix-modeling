@@ -41,7 +41,7 @@ targets:
   stg:
     mode: production
     workspace:
-      host: https://<your-workspace>.cloud.databricks.com
+      # host: https://<your-workspace>.cloud.databricks.com
       root_path: /Workspace/.bundle/${bundle.name}/stg
     variables:
       cluster_name: media-mix-modeling-stg-cluster

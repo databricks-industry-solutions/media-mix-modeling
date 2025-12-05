@@ -1,45 +1,35 @@
 name: MSA integration test PR
+
 on:
- pull_request:
+  pull_request:
 
 jobs:
- run-databricks-notebook:
-   runs-on: ubuntu-latest
-   steps:
-     - name: Checkout repo
-       uses: actions/checkout@v2
-     - name: Run a databricks notebook
-       uses: databricks/run-notebook@v0
-       with:
-         local-notebook-path: RUNME.py
-         git-commit: ${{ github.event.pull_request.head.sha }}
-         databricks-host: https://adb-984752964297111.11.azuredatabricks.net
-         databricks-token: ${{ secrets.DEPLOYMENT_TARGET_TOKEN_MSA }}
-         new-cluster-json: >
-           {
-             "num_workers": 0,
-             "spark_version": "10.4.x-scala2.12",
-             "node_type_id": "Standard_DS3_v2",
-             "azure_attributes": {
-                  "availability": "ON_DEMAND_AZURE"
-                            },
-             "spark_conf": {
-                  "spark.master": "local[*, 4]",
-                  "spark.databricks.cluster.profile": "singleNode"
-              },
-              "custom_tags": {
-                  "ResourceClass": "SingleNode"
-              }
-                            
-           }
-         notebook-params-json: >
-           {
-            "run_job": "True"
-           }
-         access-control-list-json: >
-           [
-             {
-               "group_name": "users",
-               "permission_level": "CAN_VIEW"
-             }
-           ]
+  deploy-and-test-bundle:
+    runs-on: ubuntu-latest
+    env:
+      DATABRICKS_HOST: ${{ vars.MSA_DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.MSA_DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.MSA_DATABRICKS_CLIENT_SECRET }}
+      BUNDLE_VAR_catalog_name: ${{ vars.MSA_CATALOG_NAME }}
+      BUNDLE_VAR_schema_name: ${{ vars.MSA_SCHEMA_NAME }}
+      BUNDLE_VAR_service_principal_name: ${{ secrets.MSA_DATABRICKS_CLIENT_ID }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Databricks CLI
+        run: pip install databricks-cli
+
+      - name: Validate bundle
+        run: databricks bundle validate -t stg
+
+      - name: Deploy bundle
+        run: databricks bundle deploy -t stg
+
+      - name: Run MMM example job
+        run: databricks bundle run mmm_example -t stg

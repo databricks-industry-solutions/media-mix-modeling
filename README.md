@@ -6,6 +6,7 @@
 
 ## Media Mix Modeling Accelerator
 
+**Under construction: We're just finishing up some changes to convert his solution accelerator to use PyMC-Marketing. Thanks for your interest and please be sure to check back again in a few days for when the changes are completed!**
 
 MMM (Marketing or Media Mix Modeling), is a data-driven methodology that enables companies to identify and measure the impact of their marketing campaigns across multiple channels.  MMM helps businesses make better-informed decisions about their advertising and marketing strategies. 
 
@@ -23,12 +24,12 @@ ___
 
 ___
 
-&copy; 2025 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the Databricks License [https://databricks.com/db-license-source].  All included or referenced third party libraries are subject to the licenses set forth below.
+&copy; 2022 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the Databricks License [https://databricks.com/db-license-source].  All included or referenced third party libraries are subject to the licenses set forth below.
 
 | library                                | description             | license    | source                                              |
 |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
 | pytest                                 | Python testing framework      | MIT        | https://github.com/pytest-dev/pytest                      |
-| pymc | Probabilistic Programming in Python | Apache 2.0 | https://github.com/pymc-devs/pymc |
+| pymc3 | Probabilistic Programming in Python | Apache 2.0 | https://github.com/pymc-devs/pymc |
 
 ## Getting started
 
@@ -45,67 +46,6 @@ To start using a solution accelerator in Databricks simply follow these steps:
 
 The cost associated with running the accelerator is the user's responsibility.
 
-## Using Databricks Asset Bundles
-
-This solution accelerator includes a Databricks Asset Bundle (DAB) configuration for modern deployment workflows.
-
-### Prerequisites
-
-- [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/index.html) installed and configured
-- Access to a Databricks workspace
-
-### Configuration
-
-1. Update the workspace URL in `databricks.yml` for your target environment(s):
-   ```yaml
-   targets:
-     dev:
-       workspace:
-         host: https://<your-workspace>.cloud.databricks.com
-   ```
-
-2. (Optional) Override variables for your environment by editing the generated file at `.databricks/bundle/dev/variable-overrides.json` or by setting environment variables:
-   ```bash
-   export DATABRICKS_BUNDLE_VAR_catalog_name=my_catalog
-   export DATABRICKS_BUNDLE_VAR_schema_name=my_schema
-   ```
-
-### Deployment
-
-Deploy the bundle to your workspace:
-
-```bash
-# Deploy to dev environment (default)
-databricks bundle deploy
-
-# Deploy to staging
-databricks bundle deploy -t stg
-
-# Deploy to production
-databricks bundle deploy -t prd
-```
-
-### Running the Job
-
-After deployment, run the MMM example job:
-
-```bash
-# Run the job
-databricks bundle run mmm_example
-
-# Or run via the Databricks UI
-# Navigate to Workflows and find "[dev] MMM Example"
-```
-
-The job consists of two sequential tasks:
-1. **generate_data**: Generates sample MMM data
-2. **fit_model**: Fits the PyMC model to the generated data
-
-### Available Targets
-
-- **dev**: Development environment (runs as current user)
-- **stg**: Staging environment (runs as service principal)
-- **prd**: Production environment (runs as service principal)
 
 ## Project support 
 
