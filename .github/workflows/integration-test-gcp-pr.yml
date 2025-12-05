@@ -1,13 +1,11 @@
 name: GCP integration test PR
 
 on:
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   deploy-and-test-bundle:
-    runs-on:
-      group: ubuntu-runners
-      labels: ubuntu-20.04-16core
+    runs-on: ubuntu-latest
     env:
       DATABRICKS_HOST: ${{ vars.GCP_DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.GCP_DATABRICKS_CLIENT_ID }}
