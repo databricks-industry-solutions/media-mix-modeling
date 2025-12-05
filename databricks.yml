@@ -1,0 +1,63 @@
+bundle:
+  name: media-mix-modeling
+
+include:
+  - resources/*.yml
+
+
+variables:
+  cluster_name:
+    description: Name of the cluster to use for jobs
+    default: media-mix-modeling-cluster
+
+  catalog_name:
+    description: Unity Catalog name
+    default: <your-catalog>
+
+  schema_name:
+    description: Schema name
+    default: <your-schema>
+
+  service_principal_name:
+    description: Service principal for production deployments (stg/prd)
+    default: <your-service-principal>
+
+  dev_cluster_id:
+    description: Cluster ID for dev environment
+    default: <your-cluster-id>
+
+targets:
+  dev:
+    mode: development
+    default: true
+    cluster_id: ${var.dev_cluster_id}
+    workspace:
+      host: https://e2-demo-field-eng.cloud.databricks.com/
+    variables:
+      cluster_name: media-mix-modeling-dev-cluster
+    run_as:
+      user_name: ${workspace.current_user.userName}
+
+  stg:
+    mode: production
+    workspace:
+      # host: https://<your-workspace>.cloud.databricks.com
+      root_path: /Workspace/.bundle/${bundle.name}/stg
+    variables:
+      cluster_name: media-mix-modeling-stg-cluster
+      catalog_name: stg
+      schema_name: media_mix_modeling
+    run_as:
+      service_principal_name: ${var.service_principal_name}
+
+  prd:
+    mode: production
+    workspace:
+      host: https://<your-workspace>.cloud.databricks.com
+      root_path: /Workspace/.bundle/${bundle.name}/prd
+    variables:
+      cluster_name: media-mix-modeling-prd-cluster
+      catalog_name: prd
+      schema_name: media_mix_modeling
+    run_as:
+      service_principal_name: ${var.service_principal_name}
