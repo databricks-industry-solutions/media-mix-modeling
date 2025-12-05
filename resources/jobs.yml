@@ -5,27 +5,31 @@ resources:
 
       tasks:
         - task_key: generate_data
-          job_cluster_key: main_cluster
+          environment_key: serverless
           notebook_task:
             notebook_path: ../generate_data.py
-          libraries:
-            - requirements: ../requirements.txt
+            base_parameters:
+              catalog_name: ${var.catalog_name}
+              schema_name: ${var.schema_name}
+              gold_table_name: ${var.gold_table_name}
 
         - task_key: fit_model
           depends_on:
             - task_key: generate_data
-          job_cluster_key: main_cluster
+          environment_key: serverless
           notebook_task:
             notebook_path: ../fit_model.py
-          libraries:
-            - requirements: ../requirements.txt
+            base_parameters:
+              catalog_name: ${var.catalog_name}
+              schema_name: ${var.schema_name}
+              gold_table_name: ${var.gold_table_name}
+              experiment_name: ${var.experiment_name}
 
-      job_clusters:
-        - job_cluster_key: main_cluster
-          new_cluster:
-            spark_version: 16.4.x-scala2.12
-            node_type_id: i3.xlarge
-            num_workers: 2
+      environments:
+        - environment_key: serverless
+          spec:
+            dependencies:
+              - requirements.txt
 
       schedule:
         quartz_cron_expression: "0 0 2 * * ?"
