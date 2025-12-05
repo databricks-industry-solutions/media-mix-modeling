@@ -37,7 +37,7 @@
 # MAGIC
 # MAGIC 💭 **Sidenote: MMM Libraries**
 # MAGIC
-# MAGIC Of the MMM specific Bayesian libraries, the ones we here about the most often are:
+# MAGIC Of the MMM specific Bayesian libraries, the ones we hear about the most often are:
 # MAGIC
 # MAGIC 1. [PyMC-Marketing](https://github.com/pymc-labs/pymc-marketing) ❤️: An open source Bayesian marketing package supporting MMM, CLV, and other models originally from [PyMC Labs](https://www.pymc-labs.io/).
 # MAGIC 2. [Robyn](https://facebookexperimental.github.io/Robyn/): An open source MMM package originally from Facebook in R.
