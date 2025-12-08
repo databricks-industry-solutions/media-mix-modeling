@@ -21,12 +21,12 @@ class Channel:
         self.decay = kwargs['decay']
         if self.decay:
             self.alpha = kwargs['alpha']
-        
+
         self.beta = kwargs['beta']
         self.sigma = kwargs['signal']['sigma']
         self.min = kwargs['min']
         self.max = kwargs['max']
-    
+
     def sample(self, n):
         """Generate a basic signal to represent spend on this channel."""
         x = np.abs(np.cumsum(np.random.normal(0, self.sigma, size=n)))
@@ -34,26 +34,26 @@ class Channel:
 
     def impact(self, x):
         """Compute the impact of adspend on a channel on the outcome using our basic model."""
-    
+
         # the model parameters are interpreted assuming a scaled input, so rescale
         x = rescale(x, 0, 1)
-    
+
         # if it's the decay model, then apply the decate
         if self.decay:
             x = mmt.geometric_adstock(x, self.alpha).eval()
-    
+
         # if it includes a saturation component, apply it as logistic with mu
-        if self.saturation: 
+        if self.saturation:
             x = mmt.saturation(x, self.mu).eval()
-    
+
         # apply beta
         return self.beta * x
-        
+
 
 class Generator:
 
-    def __init__(self, 
-        start_date: datetime, 
+    def __init__(self,
+        start_date: datetime,
         end_date: datetime,
         outcome_name: str,
         intercept: float,
@@ -68,7 +68,7 @@ class Generator:
         self.sigma = sigma
         self.scale = scale
         self.channels = {}
-    
+
     def sample(self) -> pd.DataFrame:
         pass
 
@@ -91,9 +91,9 @@ class Generator:
         for name in config['media'].keys():
             channel = Channel(name, **config['media'][name])
             generator.add_channel(channel)
-        
+
         return generator
-    
+
     def add_channel(self, channel: Channel):
         self.channels[channel.name] = channel
 
@@ -111,7 +111,7 @@ class Generator:
 
         # generate the baseline signal at the intercept with some white noise
         outcome = np.random.normal(self.intercept, self.sigma, self.n)
-        
+
         # add the impact for each channel
         for channel in self.channels.values():
             adspend = channel.sample(self.n)
@@ -122,7 +122,7 @@ class Generator:
         df[self.outcome_name] = np.round(outcome * self.scale, 2)
 
         return df
-        
+
 
 def rescale(x, a, b):
     """Rescale x to be between a and b."""
@@ -146,6 +146,5 @@ def convert_to_spark_dataframe(df: pd.DataFrame, schema: StructType) -> pyspark.
     return (
         spark.createDataFrame(
             df.reset_index(drop=False)
-            .rename({'index': 'date'}), 
+            .rename({'index': 'date'}),
             schema=schema))
-    

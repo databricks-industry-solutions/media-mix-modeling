@@ -26,7 +26,7 @@ def log_figure(filename):
 
 class Channel:
 
-    def __init__(self, 
+    def __init__(self,
         channel_name: str,
         beta_sd_prior: float = 1,
         has_saturation: bool = False,
@@ -46,7 +46,7 @@ class Channel:
         self.has_geometric_adstock = has_geometric_adstock
         self.geometric_adstock_alpha_prior = geometric_adstock_alpha_prior
         self.geometric_adstock_beta_prior = geometric_adstock_beta_prior
-    
+
     @classmethod
     def from_config_dict(cls, name: str, config: Dict):
         c = Channel(name, config['beta']['sd'])
@@ -62,27 +62,27 @@ class Channel:
 
     def get_contribution(self, obs: np.ndarray):
         out = obs
-    
+
         print(f'Adding channel: {self.channel_name}')
-    
+
         if self.has_geometric_adstock:
             alpha = pm.Beta(
-                f'geometric_adstock_{self.channel_name}', 
-                alpha=self.geometric_adstock_alpha_prior, 
+                f'geometric_adstock_{self.channel_name}',
+                alpha=self.geometric_adstock_alpha_prior,
                 beta=self.geometric_adstock_beta_prior)
             out = geometric_adstock(out, alpha)
-    
+
         if self.has_saturation:
             channel_mu = pm.Gamma(
-                f'saturation_{self.channel_name}', 
-                alpha=self.saturation_alpha_prior, 
+                f'saturation_{self.channel_name}',
+                alpha=self.saturation_alpha_prior,
                 beta=self.saturation_beta_prior)
             out = saturation(out, channel_mu)
-    
+
         channel_b = pm.HalfNormal(
-            f'beta_{self.channel_name}', 
+            f'beta_{self.channel_name}',
             sigma=self.beta_sd_prior)
-        
+
         return out * channel_b
 
     def to_config_dict(self):
@@ -96,7 +96,7 @@ class Channel:
                 'alpha': self.saturation_alpha_prior,
                 'beta': self.saturation_beta_prior }
         return config
-        
+
 
 class ModelConfig:
 
@@ -128,51 +128,51 @@ class ModelConfig:
 
     def create_model(self, df):
         model = pm.Model()
-    
+
         with model:
             response_mean = []
-    
+
             intercept = pm.Normal(
-                'intercept', 
-                mu=self.intercept_mu, 
+                'intercept',
+                mu=self.intercept_mu,
                 sigma=self.intercept_sd)
             response_mean.append(intercept)
-    
+
             for c in self.channels:
                 obs = df[c.channel_name].values
                 response_mean.append(c.get_contribution(obs))
-    
+
             # Continuous Control Variables
             for channel_name in self.control_vars:
                 x = df[channel_name].values
-                
+
                 print(f'Adding Control: {channel_name}')
-                
+
                 control_beta = pm.Normal(f'beta_{channel_name}', sigma=1)
                 channel_contrib = control_beta * x
                 response_mean.append(channel_contrib)
-                
+
             # Categorical control variables
             for var_name in self.index_vars:
                 shape = len(df[var_name].unique())
                 obs = df[var_name].values
-                
+
                 print(f'Adding Index Variable: {var_name}')
-                
+
                 ind_beta = pm.Normal(f'beta_{var_name}', sigma=.5, shape=shape)
                 channel_contrib = ind_beta[obs]
                 response_mean.append(channel_contrib)
-    
+
             # Noise level
             sigma = pm.HalfCauchy('sigma', beta=self.sigma_beta)
-    
+
             # Define likelihood
             likelihood = pm.Normal(
-                self.outcome_name, 
-                mu=sum(response_mean), 
-                sigma=sigma, 
+                self.outcome_name,
+                mu=sum(response_mean),
+                sigma=sigma,
                 observed=df[self.outcome_name].values)
-    
+
         return model
 
     @classmethod
@@ -270,4 +270,3 @@ class ModelConfig:
         idata.to_netcdf('idata.nc')
         mlflow.log_artifact('idata.nc')
 
-            
