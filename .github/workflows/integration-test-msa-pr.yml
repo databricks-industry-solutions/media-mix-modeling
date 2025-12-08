@@ -5,7 +5,7 @@ on:
 
 jobs:
   deploy-and-test-bundle:
-    runs-on: ubuntu-latest
+    runs-on: html_publisher
     env:
       DATABRICKS_HOST: ${{ vars.MSA_DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.MSA_DATABRICKS_CLIENT_ID }}
