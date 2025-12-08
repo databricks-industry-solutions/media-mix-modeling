@@ -20,7 +20,7 @@ variables:
 
   gold_table_name:
     description: Name of the gold table for MMM data
-    default: mmm_data
+    default: daily_media_spend_and_sales
 
   experiment_name:
     description: MLflow experiment path (full path including /Users/<username>/)
@@ -51,7 +51,7 @@ targets:
     mode: production
     workspace:
       # host: https://<your-workspace>.cloud.databricks.com
-      root_path: /Workspace/.bundle/${bundle.name}/stg
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/stg
     variables:
       cluster_name: media-mix-modeling-stg-cluster
       catalog_name: stg
@@ -64,7 +64,7 @@ targets:
     mode: production
     workspace:
       host: https://<your-workspace>.cloud.databricks.com
-      root_path: /Workspace/.bundle/${bundle.name}/prd
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/prd
     variables:
       cluster_name: media-mix-modeling-prd-cluster
       catalog_name: prd
