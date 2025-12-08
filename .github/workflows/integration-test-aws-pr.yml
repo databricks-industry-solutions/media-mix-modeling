@@ -12,8 +12,8 @@ jobs:
       DATABRICKS_CLIENT_SECRET: ${{ secrets.AWS_DATABRICKS_CLIENT_SECRET }}
       BUNDLE_VAR_catalog_name: ${{ vars.AWS_CATALOG_NAME }}
       BUNDLE_VAR_schema_name: ${{ vars.AWS_SCHEMA_NAME }}
-      BUNDLE_VAR_gold_table_name: ${{ vars.AWS_GOLD_TABLE_NAME }}
-      BUNDLE_VAR_experiment_name: ${{ vars.AWS_EXPERIMENT_NAME }}
+      BUNDLE_VAR_gold_table_name: ${{ vars.GOLD_TABLE_NAME }}
+      BUNDLE_VAR_experiment_name: ${{ vars.EXPERIMENT_NAME }}
       BUNDLE_VAR_service_principal_name: ${{ secrets.AWS_DATABRICKS_CLIENT_ID }}
     steps:
       - name: Checkout repo
