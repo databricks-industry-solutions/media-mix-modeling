@@ -46,6 +46,12 @@ targets:
       experiment_name: /Users/${workspace.current_user.userName}/media-mix-modeling
     run_as:
       user_name: ${workspace.current_user.userName}
+    resources:
+      jobs:
+        mmm_example:
+          permissions:
+            - user_name: ${workspace.current_user.userName}
+              level: IS_OWNER
 
   stg:
     mode: production
@@ -59,6 +65,14 @@ targets:
       experiment_name: /Shared/media-mix-modeling-stg
     run_as:
       service_principal_name: ${var.service_principal_name}
+    resources:
+      jobs:
+        mmm_example:
+          permissions:
+            - service_principal_name: ${var.service_principal_name}
+              level: IS_OWNER
+            - group_name: users
+              level: CAN_VIEW
 
   prd:
     mode: production
@@ -72,3 +86,11 @@ targets:
       experiment_name: /Shared/media-mix-modeling-prd
     run_as:
       service_principal_name: ${var.service_principal_name}
+    resources:
+      jobs:
+        mmm_example:
+          permissions:
+            - service_principal_name: ${var.service_principal_name}
+              level: IS_OWNER
+            - group_name: users
+              level: CAN_VIEW

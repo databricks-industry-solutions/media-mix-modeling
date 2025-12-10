@@ -40,10 +40,7 @@ resources:
         on_failure:
           - ${workspace.current_user.userName}
 
-      permissions:
-        - service_principal_name: ${var.service_principal_name}
-          level: IS_OWNER
-        - group_name: users
-          level: CAN_VIEW
+      # Permissions are defined per target in databricks.yml
+      # to support both user-based (dev) and service principal-based (stg/prd) deployments
 
       max_concurrent_runs: 1
