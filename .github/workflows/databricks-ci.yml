@@ -1,7 +1,13 @@
-name: AWS integration test PR
+name: Databricks Asset Bundles CI
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
 
 jobs:
   deploy-and-test-bundle:
