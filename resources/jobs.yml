@@ -40,4 +40,10 @@ resources:
         on_failure:
           - ${workspace.current_user.userName}
 
+      access_control:
+        - service_principal_name: ${var.service_principal_name}
+          permission_level: IS_OWNER
+        - group_name: account_users
+          permission_level: CAN_VIEW
+
       max_concurrent_runs: 1
