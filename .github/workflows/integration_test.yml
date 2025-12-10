@@ -1,4 +1,4 @@
-name: Databricks Asset Bundles CI
+name: Integration Test
 
 on:
   workflow_dispatch:
@@ -11,6 +11,7 @@ on:
 
 jobs:
   deploy-and-test-bundle:
+    name: Deploy and Test Bundle
     runs-on: html_publisher
     env:
       DATABRICKS_HOST: ${{ vars.AWS_DATABRICKS_HOST }}
