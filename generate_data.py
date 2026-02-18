@@ -14,7 +14,7 @@
 # MAGIC
 # MAGIC Databricks Lakehouse offers a unified platform for building modernized MMM solutions that are scalable and flexible. Marketers can unify various upstream data sources, automates data ingestion, processing, and transformation, and provides full transparency and traceability of data usage. With powerful data science and machine learning capabilities and collaborative workstreams, marketers can seamlessly leverage the full potential of their data, driving more informed and effective marketing investment decisions.
 # MAGIC
-# MAGIC In this notebook, we set up the environment to generate some synthetic data we will use in the second notebook, where we showcase how to build a media mix model using the classes we wrote based on [pymc](https://www.pymc.io/welcome.html).
+# MAGIC In this notebook, we set up the environment to generate some synthetic data we will use in the second notebook, where we showcase how to build a media mix model using [PyMC-Marketing](https://www.pymc-marketing.io/).
 # MAGIC
 # MAGIC <insert architecture diagram>
 
@@ -110,4 +110,4 @@ display(sdf)
 # MAGIC %md
 # MAGIC ### Data generation ✅
 # MAGIC
-# MAGIC That's all for the data generation notebook. Next, head on over to the "02_MMM PyMC Example" notebook to see if we can recover those parameters with our Bayesian modeling exercise!
+# MAGIC That's all for the data generation notebook. Next, head on over to the model fitting notebook to see if we can recover those parameters with PyMC-Marketing!

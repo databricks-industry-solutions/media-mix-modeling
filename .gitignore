@@ -132,3 +132,7 @@ dmypy.json
 
 # Databricks bundle local state
 .databricks/
+
+# Model artifacts and validation outputs
+validation_output/
+*.nc
