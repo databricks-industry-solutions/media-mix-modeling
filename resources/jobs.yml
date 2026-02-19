@@ -7,7 +7,7 @@ resources:
         - task_key: generate_data
           environment_key: serverless
           notebook_task:
-            notebook_path: ../generate_data.py
+            notebook_path: ../01_generate_data.ipynb
             base_parameters:
               catalog_name: ${var.catalog_name}
               schema_name: ${var.schema_name}
@@ -18,7 +18,7 @@ resources:
             - task_key: generate_data
           environment_key: serverless
           notebook_task:
-            notebook_path: ../fit_model.py
+            notebook_path: ../02_fit_model.ipynb
             base_parameters:
               catalog_name: ${var.catalog_name}
               schema_name: ${var.schema_name}
