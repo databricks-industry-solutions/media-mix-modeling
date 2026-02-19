@@ -7,7 +7,7 @@ resources:
         - task_key: generate_data
           environment_key: serverless
           notebook_task:
-            notebook_path: ../generate_data.py
+            notebook_path: ../01_generate_data.ipynb
             base_parameters:
               catalog_name: ${var.catalog_name}
               schema_name: ${var.schema_name}
@@ -18,7 +18,7 @@ resources:
             - task_key: generate_data
           environment_key: serverless
           notebook_task:
-            notebook_path: ../fit_model.py
+            notebook_path: ../02_fit_model.ipynb
             base_parameters:
               catalog_name: ${var.catalog_name}
               schema_name: ${var.schema_name}
@@ -28,6 +28,7 @@ resources:
       environments:
         - environment_key: serverless
           spec:
+            environment_version: "4"
             dependencies:
               - -r ../requirements.txt
 
@@ -40,10 +41,7 @@ resources:
         on_failure:
           - ${workspace.current_user.userName}
 
-      permissions:
-        - service_principal_name: ${var.service_principal_name}
-          level: IS_OWNER
-        - group_name: users
-          level: CAN_VIEW
+      # Permissions are defined per target in databricks.yml
+      # to support both user-based (dev) and service principal-based (stg/prd) deployments
 
       max_concurrent_runs: 1
