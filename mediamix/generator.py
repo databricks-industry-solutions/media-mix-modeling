@@ -35,8 +35,10 @@ class Channel:
     def impact(self, x):
         """Compute the impact of adspend on a channel on the outcome using our basic model."""
 
-        # the model parameters are interpreted assuming a scaled input, so rescale
-        x = rescale(x, 0, 1)
+        # Max-abs scale to match PyMC-Marketing's internal pipeline,
+        # so that adstock (alpha) and saturation (lam) parameters are
+        # directly recoverable by the model.
+        x = x / np.max(np.abs(x))
 
         # if it's the decay model, then apply the decate
         if self.decay:

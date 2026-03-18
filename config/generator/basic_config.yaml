@@ -11,20 +11,22 @@ media:
       base: walk
       sigma: 1
     saturation: true
-    decay: false
+    decay: true
     min: 3928.0
     max: 49287.0
     mu: 3.1
+    alpha: 0.15
     beta: 1.5
   facebook:
     signal:
       base: walk
       sigma: 1
     saturation: true
-    decay: false
+    decay: true
     min: 1029.0
     max: 83927.0
     mu: 4.2
+    alpha: 0.35
     beta: 1.0
   linkedin:
     signal:

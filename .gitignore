@@ -136,3 +136,9 @@ dmypy.json
 # Model artifacts and validation outputs
 validation_output/
 *.nc
+
+# Local direnv
+.envrc
+
+# Local MLflow runs
+mlruns
