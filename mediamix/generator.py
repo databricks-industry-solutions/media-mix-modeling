@@ -64,7 +64,8 @@ class Generator:
     ):
         self.start_date = start_date
         self.end_date = end_date
-        self.n = (self.end_date - self.start_date).days + 1
+        self.date_index = pd.date_range(start=self.start_date, end=self.end_date, freq='W')
+        self.n = len(self.date_index)
         self.outcome_name = outcome_name
         self.intercept = intercept
         self.sigma = sigma
@@ -102,8 +103,7 @@ class Generator:
     def _create_empty_dataframe(self):
         n_channels = len(self.channels)
         cols = list(self.channels.keys()) + [self.outcome_name]
-        idx = pd.date_range(start=self.start_date, end=self.end_date)
-        df = pd.DataFrame(np.zeros((self.n, n_channels + 1)), columns=cols, index=idx)
+        df = pd.DataFrame(np.zeros((self.n, n_channels + 1)), columns=cols, index=self.date_index)
         return df
 
     def sample(self):
