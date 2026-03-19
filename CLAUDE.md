@@ -92,22 +92,22 @@ python fit_model.py      # Fit model and validate
 ### Notebook Pipeline (two-step workflow)
 
 #### 1. `generate_data.py` - Synthetic Data Generation
-Generates synthetic marketing spend data for 3 channels (adwords, facebook, linkedin) and a sales outcome using configurable parameters:
-- **Date range**: 2019-01-01 to 2022-12-31 (configurable)
+Generates synthetic weekly marketing spend data for 3 channels (adwords, facebook, linkedin) and a sales outcome using configurable parameters:
+- **Date range**: 2019-01-01 to 2022-12-31, weekly granularity (~209 observations)
 - **Channels**: Each with min/max spend, beta coefficients, optional saturation (logistic), optional adstock (geometric)
 - **Output**: Delta table in Unity Catalog (`{catalog}.{schema}.{gold_table_name}`)
 - **Schema**: `date`, `adwords`, `facebook`, `linkedin`, `sales`
 
 **Ground truth parameters** (from `config/generator/basic_config.yaml`):
-- adwords: β=1.5, μ=3.1 (saturation only)
-- facebook: β=1.0, μ=4.2 (saturation only)
+- adwords: β=1.5, μ=3.1, α=0.15 (saturation + adstock)
+- facebook: β=1.0, μ=4.2, α=0.35 (saturation + adstock)
 - linkedin: β=2.4, μ=2.1, α=0.6 (saturation + adstock)
 - intercept=3.4, scale=100k, σ=0.01
 
 #### 2. `fit_model.py` - PyMC-Marketing MMM
 Loads the gold table and fits a Bayesian MMM:
 - **Model**: PyMC-Marketing's `MMM` class
-- **Adstock**: `GeometricAdstock(l_max=12)` - carryover effect up to 12 time periods
+- **Adstock**: `GeometricAdstock(l_max=12)` - carryover effect up to 12 weeks
 - **Saturation**: `LogisticSaturation()` - diminishing returns
 - **Inference**: NUTS sampler (1000 draws, 1000 tune, 4 chains)
 - **Tracking**: MLflow experiment logging
@@ -225,6 +225,9 @@ This is not a limitation - it's a consequence of PyMC-Marketing's design choice 
 ### Project Conventions
 - **No CHANGELOG**: Git history serves as the changelog. Do not create or maintain a separate CHANGELOG file.
 - **No legacy directory**: Deleted code is recoverable from git history. Do not archive old code into a `legacy/` folder — just delete it.
+
+### Workflow
+- **Pause before committing**: After making changes and running tests, pause and let the user review the diff before committing, pushing, or creating a PR. If the user has explicitly asked you to commit or the context clearly indicates it's expected, go ahead — but when in doubt, stop and ask.
 
 ### When Adding New Features
 - Build on PyMC-Marketing in `fit_model.py`
