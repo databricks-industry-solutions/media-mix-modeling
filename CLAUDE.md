@@ -226,6 +226,9 @@ This is not a limitation - it's a consequence of PyMC-Marketing's design choice 
 - **No CHANGELOG**: Git history serves as the changelog. Do not create or maintain a separate CHANGELOG file.
 - **No legacy directory**: Deleted code is recoverable from git history. Do not archive old code into a `legacy/` folder — just delete it.
 
+### Workflow
+- **Pause before committing**: After making changes and running tests, pause and let the user review the diff before committing, pushing, or creating a PR. If the user has explicitly asked you to commit or the context clearly indicates it's expected, go ahead — but when in doubt, stop and ask.
+
 ### When Adding New Features
 - Build on PyMC-Marketing in `fit_model.py`
 - Add tests in `tests/` for new functionality
