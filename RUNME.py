@@ -32,6 +32,15 @@ from solacc.companion import NotebookSolutionCompanion
 
 # COMMAND ----------
 
+# Determine the workspace path of this notebook's directory so we can
+# reference the init script that lives alongside it in the repo.
+import os
+notebook_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
+repo_dir = os.path.dirname(notebook_path)
+init_script_path = os.path.join(repo_dir, "init_install_graphviz.sh")
+
+# COMMAND ----------
+
 libraries = [
     { "pypi": { "package": "graphviz==0.20.3" } },
     { "pypi": { "package": "pymc==5.16.2" } },
@@ -72,7 +81,7 @@ job_json = {
             {
                 "job_cluster_key": "mmm_cluster",
                 "new_cluster": {
-                    "spark_version": "14.3.x-cpu-ml-scala2.12",
+                    "spark_version": "17.3.x-cpu-ml-scala2.13",
                 "spark_conf": {
                     "spark.databricks.delta.formatCheck.enabled": "false"
                     },
@@ -83,6 +92,13 @@ job_json = {
                         "group": "CME",
                         "accelerator": "media-mix-modeling"
                     },
+                    "init_scripts": [
+                        {
+                            "workspace": {
+                                "destination": init_script_path
+                            }
+                        }
+                    ],
                 }
             }
         ]
