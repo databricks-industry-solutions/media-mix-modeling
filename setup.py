@@ -11,7 +11,7 @@ setup(
     python_requires=">=3.10",
     install_requires=[
         "graphviz==0.20.3",
-        "mlflow==3.6.0",
+        "mlflow==3.11.0rc1",
         "pymc-marketing==0.17.1",
     ],
     extras_require={
