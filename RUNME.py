@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md This notebook sets up the companion cluster(s) to run the solution accelerator. It also creates the Workflow to illustrate the order of execution. Happy exploring! 
 # MAGIC 🎉
 # MAGIC
@@ -42,9 +46,10 @@ init_script_path = os.path.join(repo_dir, "init_install_graphviz.sh")
 # COMMAND ----------
 
 libraries = [
-    { "pypi": { "package": "graphviz==0.20.3" } },
-    { "pypi": { "package": "pymc==5.16.2" } },
-    { "pypi": { "package": "pytest==8.2.2" } }
+    { "pypi": { "package": "graphviz==0.21" } },
+    { "pypi": { "package": "pymc-marketing==1.0.0" } },
+    { "pypi": { "package": "netCDF4==1.7.4" } },
+    { "pypi": { "package": "pytest==9.1.1" } },
 ]
 
 job_json = {
@@ -81,7 +86,7 @@ job_json = {
             {
                 "job_cluster_key": "mmm_cluster",
                 "new_cluster": {
-                    "spark_version": "17.3.x-cpu-ml-scala2.13",
+                    "spark_version": "18.x-scala2.13",
                 "spark_conf": {
                     "spark.databricks.delta.formatCheck.enabled": "false"
                     },
