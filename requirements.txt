@@ -1,4 +1,4 @@
 graphviz==0.21
-mlflow==3.15.1
+mlflow==3.13.0rc0
 pymc-marketing==1.0.0
 pytest==9.1.1
